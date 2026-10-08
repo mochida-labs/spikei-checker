@@ -259,7 +259,7 @@ table.list td.r,table.list th.r{text-align:right;white-space:nowrap}
 .sheet .ordered span{white-space:pre-line}
 .sheet .ordered.ng{background:var(--bad);color:#fff}
 .sheet .ordered.ng button{color:#fff}
-.sheet .ordered button{border:none;background:none;color:var(--bad);font-weight:700;padding:0}
+.sheet .ordered button{white-space:nowrap;border:none;background:none;color:var(--bad);font-weight:700;padding:0}
 .sheet h3{margin:0;font-family:var(--display);font-size:22px}
 .sheet .lvname{font-family:var(--display);font-weight:700;font-size:14px;color:var(--muted)}
 .facts{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
@@ -276,6 +276,10 @@ table.list td.r,table.list th.r{text-align:right;white-space:nowrap}
 .card.foldable > :first-child::after{content:"";position:absolute;right:2px;top:50%;width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:translateY(-70%) rotate(45deg);transition:transform .2s}
 .card.foldable.collapsed > :first-child::after{transform:translateY(-30%) rotate(-45deg)}
 .card.foldable.collapsed > :not(:first-child){display:none!important}
+.treecard{border:1.5px solid color-mix(in srgb,var(--ok) 45%,transparent);background:color-mix(in srgb,var(--ok) 9%,var(--surface));border-radius:12px;padding:10px 14px}
+.treecard .tc-h{display:flex;align-items:center;gap:6px;font-family:var(--display);font-weight:700;font-size:14px;color:var(--ok)}
+.treecard svg{width:20px;height:20px}
+.treecard p{margin:4px 0 0;font-size:14.5px;line-height:1.75}
 /* 下タブ */
 nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));z-index:5}
 nav.tabs .in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:2px}
@@ -462,6 +466,11 @@ nav.tabs button[aria-selected="true"] svg{color:var(--amber)}
     <div class="seg" id="levelSeg" style="margin-top:10px"><button data-l="1">初級者</button><button data-l="2">中級者</button><button data-l="3">上級者</button><button data-l="4">達人</button><button data-l="5">変人</button></div>
   </div>
   <div class="card">
+    <h2>知識コレクション</h2>
+    <div class="sub">頼むたびに違う豆知識が出ます。読んだ数がたまっていきます。</div>
+    <div id="collection" style="margin-top:10px"></div>
+  </div>
+  <div class="card">
     <h2>プロフィール</h2>
     <div class="sub">カロリーの目安と、アルコールが抜けるまでの時間の計算に使います。体重は「ツミとバツ」の記録と共通です。</div>
     <div class="field"><label>性別</label><div class="seg" id="sexSeg"><button data-v="m">男性</button><button data-v="f">女性</button></div></div>
@@ -543,6 +552,8 @@ nav.tabs button[aria-selected="true"] svg{color:var(--amber)}
     <div class="seg" id="shLevel"><button data-l="1">初級者</button><button data-l="2">中級者</button><button data-l="3">上級者</button><button data-l="4">達人</button><button data-l="5">変人</button></div>
     <div class="lvname" id="shLvName"></div>
     <ul class="facts" id="shFacts"></ul>
+    <div class="treecard" id="shTree" hidden><div class="tc-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22v-7"/><path d="M12 15c-4 0-7-2.5-7-6a5 5 0 0 1 4-4.9A4 4 0 0 1 15.5 4 4.5 4.5 0 0 1 19 9c0 3.5-3 6-7 6z"/><path d="M12 15l-3-3M12 13l3-3"/></svg>樹木医の一ネタ</div><p id="shTreeTxt"></p></div>
+    <div class="row between" id="shMoreRow"><span class="sub num" id="shProg"></span><button class="btn ghost" id="shMore" style="padding:6px 14px">次の豆知識 ▶</button></div>
   </div>
   <div id="shBrand" hidden></div>
   <div class="row"><button class="btn ghost" id="shClose" style="flex:1;padding:12px">閉じて飲む</button></div>
@@ -777,6 +788,9 @@ const PAIR={
  china:{label:'紹興酒',styles:[{n:'紹興酒',s:'熟成した黄酒',f:['麻婆豆腐','小籠包','黒酢の酢豚'],w:'常温かぬる燗で。発酵の香りが中華の香辛料と合う。'}]}
 };
 
+// ---------- 豆知識データ（trivia.json）を読み込んで追加 ----------
+let TREE={};
+function mergeTrivia(T){if(T._tree)TREE=T._tree;Object.keys(T).forEach(id=>{if(id[0]==='_')return;const tgt=byId[id]?INFO:(fById[id]?FINFO:null);if(!tgt)return;tgt[id]=tgt[id]||{};for(const lv of ['1','2','3','4','5']){const add=(T[id][lv]||[]).filter(t=>typeof t==='string'&&t.trim());const cur=tgt[id][lv]||[];const seen=new Set(cur);tgt[id][lv]=cur.concat(add.filter(t=>!seen.has(t)))}})}
 // ---------- 状態 ----------
 let st={sizePref:{},customD:[],customF:[],cond:'mid',work:{on:true,time:'07:00'},floatOn:true,entries:[],daily:{},limit:20,mode:'liver',level:2,prof:{sex:'m',age:50,h:170,act:1.75},weights:{},shops:[],cur:{},review:{},sample:false};
 function save(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
@@ -1145,7 +1159,11 @@ $('aiResult').onclick=e=>{
 
 // ---------- 豆知識シート ----------
 let shKind='drink',shId=null,shEntry=null,shTab='info',shLv=null;
-function openSheet(id,entry,kind){shKind=kind||'drink';shId=id;shEntry=entry||null;shTab='info';shLv=st.level;renderSheet();$('sheet').hidden=false;document.body.style.overflow='hidden'}
+const PER=2;let shStart={};
+function hashStr(t){let h=2166136261;for(const c of t){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
+function orderOf(key,n){const a=[...Array(n).keys()];let r=hashStr(key)||1;for(let i=n-1;i>0;i--){r=(Math.imul(r,1103515245)+12345)>>>0;const j=r%(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
+function factsFor(kind,id,lv){const I=kind==='drink'?INFO[id]:FINFO[id];return (I&&I[lv])||[]}
+function openSheet(id,entry,kind){shKind=kind||'drink';shId=id;shEntry=entry||null;shTab='info';shLv=st.level;shStart={};renderSheet();$('sheet').hidden=false;document.body.style.overflow='hidden'}
 function closeSheet(){$('sheet').hidden=true;document.body.style.overflow=''}
 function renderSheet(){
   const dr=shKind==='drink',d=dr?byId[shId]:fById[shId];
@@ -1161,8 +1179,15 @@ function renderSheet(){
   document.querySelectorAll('#shLevel button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.l===shLv));
   $('shLvName').innerHTML=LVN[shLv]+(shLv===5?' <span class="kijin">真偽不明</span>':'');
   const I=dr?INFO[shId]:FINFO[shId];
-  const facts=(I&&I[shLv])||[];
-  $('shFacts').innerHTML=facts.length?facts.map(t=>`<li>${t}</li>`).join('')+'':'<li class="sub">このレベルの豆知識はまだありません。</li>';
+  const facts=(I&&I[shLv])||[],n=facts.length,key=`${shId}:${shLv}`;
+  st.tp=st.tp||{};st.tr=st.tr||{};
+  if(n&&shStart[shLv]==null){shStart[shLv]=st.tp[key]||0;st.tp[key]=shStart[shLv]+PER;st.tr[key]=Math.min(n,Math.max(st.tr[key]||0,shStart[shLv]+PER));save()}
+  const ord=orderOf(key,n),st0=shStart[shLv]||0,show=[];for(let i=0;i<Math.min(PER,n);i++)show.push(facts[ord[(st0+i)%n]]);
+  $('shFacts').innerHTML=n?show.map(t=>`<li>${t}</li>`).join(''):'<li class="sub">このレベルの豆知識はまだありません。</li>';
+  $('shMoreRow').hidden=n<=PER;
+  {const pool=(TREE[shId]||[]).concat(TREE._general||[]);$('shTree').hidden=!pool.length;
+   if(pool.length){if(shStart.tree==null){const k=`tree:${shId}`;shStart.tree=st.tp[k]||0;st.tp[k]=shStart.tree+1;save()}$('shTreeTxt').textContent=pool[orderOf('tree:'+shId,pool.length)[shStart.tree%pool.length]]}}
+  const rd=Math.min(n,st.tr[key]||0);$('shProg').textContent=n?(rd>=n?`この段階の${n}件をすべて読みました`:`この段階：${rd} / ${n}件 読んだ`):'';
   const B=dr?(BRANDS[brandKey(shId)]||[]):(FBRANDS[shId]||[]);
   $('shBrand').innerHTML=`<div class="sub">記録はせず、読んで楽しむずかんです。</div>`+B.map(b=>`<div class="brand"><b>${b[0]}</b><span>${b[1]}</span></div>`).join('');
   $('shClose').textContent=dr?'閉じて飲む':'閉じて食べる';
@@ -1171,6 +1196,7 @@ $('shSize').onclick=e=>{const b=e.target.closest('[data-sz]');if(!b)return;const
   if(shEntry){const sp=spec(d,sz);shEntry.size=sz;shEntry.g=gOf(sp.ml,sp.abv);shEntry.name=`${d.name}（${sz}）`}
   save();renderToday();renderSheet()};
 $('shTabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;shTab=b.dataset.t;renderSheet()};
+$('shMore').onclick=()=>{const key=`${shId}:${shLv}`,n=factsFor(shKind,shId,shLv).length;if(!n)return;shStart[shLv]=(shStart[shLv]||0)+PER;st.tp[key]=shStart[shLv]+PER;st.tr[key]=Math.min(n,Math.max(st.tr[key]||0,shStart[shLv]+PER));save();renderSheet()};
 $('shLevel').onclick=e=>{const b=e.target.closest('button');if(!b)return;shLv=+b.dataset.l;st.level=shLv;save();renderSheet()};
 $('shClose').onclick=closeSheet;
 $('sheet').onclick=e=>{if(e.target===$('sheet'))closeSheet()};
@@ -1296,7 +1322,10 @@ $('wPlus').onclick=()=>{$('wIn').value=(+$('wIn').value+0.1).toFixed(1)};
 $('wSave').onclick=()=>{const v=+$('wIn').value;if(!(v>20&&v<300)){toast('体重を確認してください');return}st.weights[todayK()]=Math.round(v*10)/10;save();renderTsumi();toast(`けさの体重 ${v.toFixed(1)}kg を記録`)};
 
 // ---------- 設定 ----------
-function renderSet(){
+function renderCollection(){const lvN=['','初級者','中級者','上級者','達人','変人'];let tot=0,rd=0;const by=[0,0,0,0,0,0],byR=[0,0,0,0,0,0];
+  [['drink',INFO],['food',FINFO]].forEach(([k,I])=>Object.keys(I).forEach(id=>{for(let lv=1;lv<=5;lv++){const n=(I[id][lv]||[]).length;const r=Math.min(n,((st.tr||{})[`${id}:${lv}`])||0);tot+=n;rd+=r;by[lv]+=n;byR[lv]+=r}}));
+  $('collection').innerHTML=`<div class="row between"><b class="num" style="font-family:var(--display);font-size:24px">${rd} <small class="sub">/ ${tot}件</small></b><span class="sub num">${tot?Math.floor(rd/tot*100):0}%</span></div><div class="bar" style="margin-top:6px"><i style="width:${tot?rd/tot*100:0}%"></i></div><div class="meta" style="margin-top:8px">${[1,2,3,4,5].map(l=>`<span class="pill num">${lvN[l]} ${byR[l]}/${by[l]}</span>`).join('')}</div>`}
+function renderSet(){renderCollection();
   document.querySelectorAll('#levelSeg button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.l===st.level));
   document.querySelectorAll('#limitSeg button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.l===st.limit));
   document.querySelectorAll('#sexSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st.prof.sex));
@@ -1377,6 +1406,7 @@ $('impJson').onchange=ev=>{const f=ev.target.files[0];ev.target.value='';if(!f)r
   $('impMsg').innerHTML=`${d.entries.length}件の記録が入ったバックアップです。いまの記録は置き換わります。<button class="btn" id="impOk" style="margin-left:6px;padding:4px 12px">戻す</button>`}catch(e){impPending=null;$('impMsg').textContent='このアプリのバックアップファイルではないようです。'}};r.readAsText(f)};
 $('impMsg').onclick=e=>{if(!e.target.closest('#impOk')||!impPending)return;st=Object.assign(st,impPending);st.agreed=true;impPending=null;registerCustom();save();renderAll();$('impMsg').textContent='';toast('バックアップから戻しました')};
 
+fetch('trivia.json',{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(T=>{if(T){mergeTrivia(T);renderSet();if(!$('sheet').hidden)renderSheet()}}).catch(()=>{});
 // ---------- オフライン対応 ----------
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 renderAll();
