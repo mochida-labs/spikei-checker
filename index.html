@@ -227,6 +227,23 @@ table.list td.r,table.list th.r{text-align:right;white-space:nowrap}
 .style h3{margin:0;font-family:var(--display);font-size:16px}
 .style h3 span{font-family:var(--body);font-size:12px;color:var(--muted);font-weight:400;margin-left:6px}
 .foods{display:flex;flex-wrap:wrap;gap:6px}
+.pairbox{border:1.5px solid color-mix(in srgb,var(--amber) 50%,transparent);background:color-mix(in srgb,var(--amber) 9%,var(--surface));border-radius:12px;padding:10px 14px}
+.pb-h{display:flex;align-items:center;gap:6px;font-family:var(--display);font-weight:700;font-size:14px;color:var(--warn)}
+.pb-h svg{width:18px;height:18px}
+.pb-list{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.pb-item{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:baseline;text-align:left;background:none;border:none;padding:0;font:inherit;color:var(--ink);cursor:pointer}
+.pb-item b{white-space:nowrap;text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--amber) 70%,transparent);text-decoration-thickness:2px;text-underline-offset:4px}
+.pb-item span{font-size:13px;color:var(--muted);line-height:1.5}
+.tips{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.tips div{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start}
+.tips i{font-style:normal;font-family:var(--display);font-weight:900;background:var(--ai);color:var(--ai-ink);border-radius:8px;padding:1px 8px;font-size:13px;white-space:nowrap}
+.tips span{font-size:13.5px;line-height:1.6}
+.tempt{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px}
+.tempt td{padding:6px 4px;border-top:1px solid var(--line)}
+.tempt td:first-child{font-weight:700;white-space:nowrap}
+.tempt td.r{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tempt tr.warm td:first-child{color:var(--bad)}.tempt tr.cold td:first-child{color:var(--ai-soft)}
+.neta-next{align-self:flex-end;margin-top:6px;padding:4px 12px}
 .food{background:color-mix(in srgb,var(--amber) 16%,var(--surface));border:1px solid color-mix(in srgb,var(--amber) 40%,transparent);border-radius:8px;padding:2px 10px;font-size:13.5px}
 .why{font-size:13.5px;color:var(--muted)}
 .src{font-size:12px;color:var(--muted);line-height:1.7}
@@ -463,6 +480,38 @@ nav.tabs button[aria-selected="true"] svg{color:var(--amber)}
     <div id="pairBody" style="margin-top:12px"></div>
   </div>
   <div class="card">
+    <h2>このつまみに、何を飲む？</h2>
+    <div class="chips scroll" id="fpChips" style="margin-top:10px"></div>
+    <div id="fpBody" style="margin-top:10px"></div>
+  </div>
+  <div class="card">
+    <h2>合わせ方のコツ</h2>
+    <div class="tips">
+      <div><i>同調</i><span>似た味を重ねる。甘辛いタレにはコクのある酒、燻製にはスモーキーなウイスキー。</span></div>
+      <div><i>補完</i><span>反対の味で引き立てる。脂っこい料理には、炭酸・渋み・酸味で口をさっぱりさせる。</span></div>
+      <div><i>強さ</i><span>料理と酒の「濃さ」をそろえる。繊細な刺身に強い酒を合わせると、料理が負けてしまう。</span></div>
+      <div><i>色</i><span>迷ったら色で合わせる。白っぽい料理には白や淡い酒、茶色や赤い料理には色の濃い酒。</span></div>
+      <div><i>地元</i><span>その土地の料理には、その土地の酒。芋焼酎と鹿児島料理、泡盛と沖縄料理は鉄板。</span></div>
+    </div>
+    <div class="sub" style="margin-top:10px">どれも目安です。最後は自分の舌がいちばんの判定役。</div>
+  </div>
+  <div class="card">
+    <h2>日本酒の温度の呼び名</h2>
+    <div class="sub" style="margin-top:4px">同じ1本でも、冷やと燗で味ががらりと変わります。</div>
+    <table class="tempt"><tbody>
+      <tr class="cold"><td>雪冷え</td><td class="r">5℃</td><td>キリッと引き締まる。爽酒向き</td></tr>
+      <tr class="cold"><td>花冷え</td><td class="r">10℃</td><td>香りが少し開く。爽酒・薫酒</td></tr>
+      <tr class="cold"><td>涼冷え</td><td class="r">15℃</td><td>まろやか。薫酒はこのあたりまで</td></tr>
+      <tr class="warm"><td>日向燗</td><td class="r">30℃</td><td>ほんのり温かい</td></tr>
+      <tr class="warm"><td>人肌燗</td><td class="r">35℃</td><td>体温くらい。米の香りが立つ</td></tr>
+      <tr class="warm"><td>ぬる燗</td><td class="r">40℃</td><td>旨味がふくらむ。醇酒にぴったり</td></tr>
+      <tr class="warm"><td>上燗</td><td class="r">45℃</td><td>香りがシャープに</td></tr>
+      <tr class="warm"><td>熱燗</td><td class="r">50℃</td><td>辛口がキレる</td></tr>
+      <tr class="warm"><td>飛び切り燗</td><td class="r">55℃〜</td><td>冬の屋台の一杯</td></tr>
+    </tbody></table>
+    <div class="sub" style="margin-top:8px">香りの高い吟醸系（薫酒）は冷やしすぎると香りが閉じます。コクのある純米系（醇酒）は燗にすると化けます。</div>
+  </div>
+  <div class="card">
     <h2>飲む前に、胃に入れておきたいもの</h2>
     <div class="sub" style="margin-top:4px">空腹で飲むとアルコールの吸収が速くなります。たんぱく質や脂肪を少し先に。</div>
     <div class="foods" style="margin-top:10px"><span class="food">枝豆</span><span class="food">冷奴</span><span class="food">チーズ</span><span class="food">卵焼き</span><span class="food">ポテトサラダ</span></div>
@@ -473,6 +522,8 @@ nav.tabs button[aria-selected="true"] svg{color:var(--amber)}
     ・日本酒の4タイプ分類：日本酒サービス研究会・酒匠研究会連合会（SSI）<br>
     ・料理の濃さと酒のタイプ：酒類総合研究所「日本酒のおいしさ」（国税庁 審議会資料）<br>
     ・和らぎ水：日本酒造組合中央会<br>
+    ・日本酒の温度とタイプ：SAKE Street「Hot or cold? The perfect temperature for your sake」<br>
+    ・おでん・串カツ・タパス・韓国の飲酒マナー：Wikipedia／天抜き：サライ.jp<br>
     ・豆知識・逸話：サントリーお客様センター、Wikipedia（北大路魯山人／ビール／日本酒／ハイボール／チューハイ／竹鶴政孝／河内源一郎／ホッピー／梅酒／紹興酒／ワイン／若山牧水）ほか<br>
     ・料理の組み合わせは一般的な相性の知見をもとにアプリ用にまとめたものです
   </div>
@@ -597,6 +648,7 @@ nav.tabs button[aria-selected="true"] svg{color:var(--amber)}
     <div class="seg" id="shLevel"><button data-l="1">初級者</button><button data-l="2">中級者</button><button data-l="3">上級者</button><button data-l="4">達人</button><button data-l="5">変人</button></div>
     <div class="lvname" id="shLvName"></div>
     <ul class="facts" id="shFacts"></ul>
+    <div class="pairbox" id="shPair" hidden><div class="pb-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h7l-1 8a2.5 2.5 0 0 1-5 0z"/><path d="M8.5 13.5V20M6 20h5"/><path d="M15 3v7a2 2 0 0 0 4 0V3M17 10v10"/></svg><span id="shPairH">合わせるなら</span></div><div class="pb-list" id="shPairList"></div></div>
     <div class="treecard" id="shTree" hidden><div class="tc-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22v-7"/><path d="M12 15c-4 0-7-2.5-7-6a5 5 0 0 1 4-4.9A4 4 0 0 1 15.5 4 4.5 4.5 0 0 1 19 9c0 3.5-3 6-7 6z"/><path d="M12 15l-3-3M12 13l3-3"/></svg>樹木医の一ネタ</div><p id="shTreeTxt"></p></div>
     <div class="row between" id="shMoreRow"><span class="sub num" id="shProg"></span><button class="btn ghost" id="shMore" style="padding:6px 14px">次の豆知識 ▶</button></div>
   </div>
@@ -819,14 +871,26 @@ const GENRES={
  french:{label:'フレンチ',tip:'コースはグラスが替わるたびに記録を。気づくとボトル1本分。',pairs:[['食前（アペリティフ）','white','泡や白で食欲を起こす。'],['白身魚のムニエル','white','バターにシャルドネ。'],['鴨のロースト','red','ピノ・ノワールが定番。'],['牛フィレ','red','渋みのしっかりした赤。'],['食後（ディジェスティフ）','wsk','ウイスキーやブランデーを少量。']],
   neta:['北大路魯山人はパリのトゥール・ダルジャンで名物の鴨を食べ、ソースが合わないと評して、持参した粉わさびと醤油で食べたと伝わる。','修道士ドン・ペリニヨンは「シャンパンを発明した人」と言われるが、本当に発明者かははっきりしない。']},
  washoku:{label:'和食',tip:'器を眺めながらゆっくり。ペースが落ちれば量も減る。',pairs:[['先付け','sake','香りの高い薫酒を冷酒で。'],['刺身','sake','軽快な爽酒で素材を活かす。'],['焼き物','sake','旨味の醇酒。'],['煮物','sake','醇酒のぬる燗。'],['天ぷら','hb','衣の油を炭酸で軽く。']],
-  neta:['北大路魯山人は1921年に会員制の「美食倶楽部」を始め、自ら厨房に立つだけでなく器まで自分で作った。1925年には料亭「星岡茶寮」を開いた。','「究極」は、美味しんぼの影響で1986年の新語・流行語大賞（新語部門金賞）になった。']}
+  neta:['北大路魯山人は1921年に会員制の「美食倶楽部」を始め、自ら厨房に立つだけでなく器まで自分で作った。1925年には料亭「星岡茶寮」を開いた。','「究極」は、美味しんぼの影響で1986年の新語・流行語大賞（新語部門金賞）になった。']},
+ sushi:{label:'寿司',tip:'シャリ（ご飯）で意外とお腹がふくれる。ガリとお茶で口をリセットしながら。',pairs:[['白身（ヒラメ・タイ）','sake','淡白なネタに、軽い爽酒を冷やで。'],['マグロ赤身','sake','赤身の旨味にコクのある醇酒。'],['トロ','hb','脂を炭酸でキュッと切る。'],['光り物（こはだ・あじ）','white','酢締めに白ワインの酸味。'],['ウニ・いくら','sake','濃厚な旨味に、香りの穏やかな醇酒。'],['玉子','sake','甘い玉子にぬる燗。']],
+  neta:['江戸前寿司は、江戸の屋台で手早くつまむ「ファストフード」として広まった。','お茶の「あがり」、醤油の「むらさき」、生姜の「ガリ」は、本来は店側の符丁（業界用語）。客が使うのは粋でない、とも言われる。']},
+ oden:{label:'おでん',tip:'練り物とつゆは塩分が多め。つゆを飲み干さず、お水を1杯。',pairs:[['大根','sake','だしの染みた大根にぬる燗。'],['牛すじ','mizu','甘辛い脂に焼酎のお湯割り。'],['はんぺん・ちくわぶ','sake','やさしい味に人肌燗。'],['玉子','nama','黄身のコクにビール。'],['からしをたっぷり','hb','からしのツンを炭酸で流す。'],['静岡おでん（黒はんぺん）','mizu','だし粉の香りに焼酎の水割り。']],
+  neta:['江戸では「おでん燗酒、甘いと辛い」の掛け声で、燗酒とおでんをいっしょに売る屋台や振り売りがはやった。','東京・赤羽の「丸健水産」で有名になった「出汁割り」は、おでんのつゆを日本酒で割り、七味をふって飲む。','名古屋でおでんといえば、八丁味噌で煮込む味噌おでんのこと。姫路では生姜醤油につけて食べる。','「おでん」は、田楽に「お」をつけた宮中の女房言葉が始まり。']},
+ soba:{label:'蕎麦屋',tip:'蕎麦屋で飲む「蕎麦前」は、ちびちびが粋。締めの蕎麦まで、ペース配分を。',pairs:[['板わさ','sake','かまぼこの甘みに冷や。'],['焼きのり','sake','磯の香りにぬる燗。'],['玉子焼き','sake','だしの甘さに燗酒。'],['天抜き','sake','汁の染みた天ぷらに、冷や酒をちびちび。'],['鴨焼き','red','鴨の脂に軽めの赤も意外と合う。'],['そばがき','sake','そば粉の香りに爽酒。']],
+  neta:['「天抜き」の「抜き」は「台抜き」の略。天ぷらそばの蕎麦を抜いて、汁と天ぷらだけで出す、酒のつまみ向けの頼み方。鴨南蛮なら「鴨抜き」。','作家・池波正太郎は蕎麦屋で飲むのを好み、随筆や小説によく書いた。']},
+ kushikatsu:{label:'串カツ',tip:'揚げ物が続くので、無料のキャベツをはさみながら。',pairs:[['牛串','nama','ソースの甘辛にビール。'],['うずら・れんこん','hb','衣の油を炭酸で。'],['紅しょうが','sour','酸っぱい同士で口がさっぱり。'],['どて焼き','mizu','味噌の甘辛に焼酎。'],['チーズ','red','とろけるチーズに軽めの赤。']],
+  neta:['大阪の串カツは、1929年に新世界で開店した「だるま」が始まりとされる。','共用ソースの「二度漬け禁止」は衛生のため。キャベツでソースをすくってかけるのはOKの店が多い。','名古屋では串カツをどて煮の八丁味噌に浸けて食べ、これが味噌カツの始まりという説がある。']},
+ korean:{label:'韓国料理',tip:'辛い料理は飲むペースが上がりがち。お水を先に頼んでおく。',pairs:[['サムギョプサル','sour','豚の脂にレモンサワー。'],['チヂミ','nama','香ばしい焼き目にビール。'],['チーズタッカルビ','hb','チーズと辛さを炭酸で。'],['キムチ','nama','辛さを炭酸でリセット。'],['チャプチェ','white','ごま油の甘辛に白。']],
+  neta:['韓国では、目上の人と飲むときは顔を横に向け、口元と杯を手で隠して飲むのがマナー。','韓国では、二日酔い対策の飲み物を「飲む前」に飲んでおく習慣がある。']},
+ spain:{label:'スペインバル',tip:'小皿をつまみながら長居しがち。杯数をこまめに記録。',pairs:[['生ハム','white','塩気に冷えた白。'],['アヒージョ','white','にんにくと油を白の酸味で。'],['パエリア','white','魚介の旨味に白。'],['チョリソ','red','パプリカの香りに赤。'],['トルティージャ','nama','じゃがいもと卵にビール。'],['オリーブ','white','塩気と酸味に白。']],
+  neta:['タパスの語源は、スペイン語の「タパール（ふたをする）」。ワインのグラスにハムでふたをして砂やハエよけにした、などの説がある。']}
 };
 // お酒のタイプ別（日本酒は4タイプ）
 const PAIR={
  beer:{label:'ビール',styles:[{n:'ピルスナー系',s:'生ビール・缶ビールの多く',f:['唐揚げ','餃子','枝豆','焼き鳥（タレ）'],w:'炭酸と苦味が揚げ物や焼き物の脂を流す。'},{n:'エール・黒ビール',s:'香りやコクが強いもの',f:['ローストビーフ','燻製','ソーセージ'],w:'香ばしさ同士で風味が引き立つ。'}]},
  whisky:{label:'ハイボール・ウイスキー',styles:[{n:'ハイボール',s:'炭酸割り',f:['唐揚げ','焼き鳥（塩）','餃子'],w:'糖分が少なくキレがあり、脂のある料理と好相性。'},{n:'ロック・ストレート',s:'チェイサー必須',f:['ナッツ','ドライフルーツ','燻製チーズ'],w:'少量の濃い味のものをちびちびと。'}]},
  sour:{label:'サワー',styles:[{n:'レモンサワー',s:'柑橘系',f:['焼肉','唐揚げ','もつ煮'],w:'「レモンを搾りたくなる料理」全般に。'},{n:'ストロング系',s:'9%前後',f:['冷奴','漬物','サラダ'],w:'1本で日本酒1合分以上。水と一緒に軽いつまみで。'}]},
- sake:{label:'日本酒',styles:[{n:'薫酒（くんしゅ）',s:'香りが高い・吟醸酒系',f:['白身魚の刺身','魚の塩焼き','天ぷら'],w:'華やかな香りを邪魔しない淡白な料理と。'},{n:'爽酒（そうしゅ）',s:'軽快・本醸造・生酒系',f:['冷奴','白身魚の刺身','おひたし'],w:'素材の味を活かす食中酒向き。'},{n:'醇酒（じゅんしゅ）',s:'コクがある・純米酒系',f:['ぶりの照り焼き','煮物','おでん'],w:'旨味のしっかりした料理と。ぬる燗も。'},{n:'熟酒（じゅくしゅ）',s:'熟成・古酒系',f:['うなぎの蒲焼','麻婆豆腐','熟成チーズ'],w:'濃い味・甘辛・スパイスに負けない。'}]},
+ sake:{label:'日本酒',styles:[{n:'薫酒（くんしゅ）',s:'香りが高い・吟醸酒系',f:['白身魚の刺身','魚の塩焼き','天ぷら'],w:'華やかな香りを邪魔しない淡白な料理と。冷やして8〜15℃くらいが目安。'},{n:'爽酒（そうしゅ）',s:'軽快・本醸造・生酒系',f:['冷奴','白身魚の刺身','おひたし'],w:'素材の味を活かす食中酒向き。よく冷やして5〜10℃。'},{n:'醇酒（じゅんしゅ）',s:'コクがある・純米酒系',f:['ぶりの照り焼き','煮物','おでん'],w:'旨味のしっかりした料理と。ぬる燗〜熱燗（40〜55℃）で旨味がふくらむ。'},{n:'熟酒（じゅくしゅ）',s:'熟成・古酒系',f:['うなぎの蒲焼','麻婆豆腐','熟成チーズ'],w:'濃い味・甘辛・スパイスに負けない。常温〜ぬる燗（15〜40℃）で。'}]},
  shochu:{label:'焼酎',styles:[{n:'芋焼酎',s:'香りとコク',f:['豚の角煮','さつま揚げ','鶏の炭火焼'],w:'鹿児島の郷土料理と「地元合わせ」。'},{n:'麦・米焼酎',s:'すっきり',f:['焼き魚','冷奴','天ぷら'],w:'クセが少なく和食全般に。'},{n:'泡盛',s:'沖縄の蒸留酒',f:['ゴーヤチャンプルー','ラフテー'],w:'沖縄料理とセットで。'}]},
  wine:{label:'ワイン',styles:[{n:'赤ワイン',s:'渋み・コク',f:['ステーキ','すき焼き','レバー'],w:'渋みが肉の脂をさっぱりさせる。'},{n:'白ワイン',s:'酸味・すっきり',f:['白身魚','鶏肉','牡蠣'],w:'酸味が魚介の生臭さを抑える。'},{n:'スパークリング',s:'泡',f:['天ぷら','生ハム','フライ'],w:'泡と酸味で揚げ物が軽くなる。'}]},
  ume:{label:'梅酒',styles:[{n:'梅酒',s:'甘酸っぱい',f:['生ハム','クリームチーズ','唐揚げ'],w:'塩気や脂に甘酸っぱさが合う。食後酒にも。'}]},
@@ -1237,6 +1301,8 @@ function renderSheet(){
   st.tp=st.tp||{};st.tr=st.tr||{};
   if(n&&shStart[shLv]==null){shStart[shLv]=st.tp[key]||0;st.tp[key]=shStart[shLv]+PER;st.tr[key]=Math.min(n,Math.max(st.tr[key]||0,shStart[shLv]+PER));save()}
   const ord=orderOf(key,n),st0=shStart[shLv]||0,show=[];for(let i=0;i<Math.min(PER,n);i++)show.push(facts[ord[(st0+i)%n]]);
+  {const PL=pairsFor(shKind,shId);$('shPair').hidden=!PL.length;$('shPairH').textContent=dr?'合わせるなら、このつまみ':'合わせるなら、このお酒';
+   $('shPairList').innerHTML=PL.map(([k,id,w])=>{const it=k==='drink'?byId[id]:fById[id];return `<button class="pb-item" data-pk="${k}" data-pid="${id}"><b>${it.name}</b><span>${w}</span></button>`}).join('')}
   $('shFacts').innerHTML=n?show.map(t=>`<li>${t}</li>`).join(''):'<li class="sub">このレベルの豆知識はまだありません。</li>';
   $('shMoreRow').hidden=n<=PER;
   {const pool=(TREE[shId]||[]).concat(TREE._general||[]);$('shTree').hidden=!pool.length;
@@ -1347,6 +1413,36 @@ $('nextM').onclick=()=>{calM++;if(calM>11){calM=0;calY++}renderCal()};
 
 // ---------- ペアリング ----------
 let genre=null,pairCat=null;
+// つまみ → 合うお酒（シートの「合わせるなら」と、ペアリングの「このつまみに何を飲む？」で使う）
+const FPAIR={
+ edamame:[['nama','塩気とビールの苦味は鉄板。'],['sake','冷やした爽酒で、豆の甘みが立つ。'],['hb','すっきり軽く。']],
+ yakko:[['sake','冷奴に冷や。大豆の甘みに爽酒。'],['nama','最初の1杯といっしょに。'],['mizu','麦焼酎の水割りで軽く。']],
+ potesara:[['nama','マヨのコクにビールの苦味。'],['white','酸味のある白で軽やかに。'],['hb','炭酸でさっぱり。']],
+ karaage:[['hb','衣の油を炭酸とキレで流す。'],['nama','王道の組み合わせ。'],['sour','レモンを搾るなら、レモンサワー。']],
+ yakitori:[['sour','塩ならレモンサワー。'],['sake','タレならコクのある醇酒。'],['red','レバーには赤。']],
+ sashimi:[['sake','冷やの爽酒か薫酒で、素材を活かす。'],['white','白身やカルパッチョ風なら白。'],['mizu','麦焼酎の水割りもすっきり。']],
+ gyoza:[['nama','脂と熱さをビールでリセット。'],['hb','炭酸で軽く。'],['china','黒酢で食べるなら紹興酒も。']],
+ dashimaki:[['sake','だしのやさしさにぬる燗。'],['nama','最初の1杯といっしょに。'],['white','やわらかい白で。']],
+ tempura:[['hb','衣の油を炭酸で軽く。'],['sake','塩で食べるなら冷やの爽酒。'],['white','泡や軽めの白も合う。']],
+ motsuni:[['hoppy','下町の煮込みにホッピーは定番。'],['mizu','焼酎のお湯割りでじんわり。'],['sake','燗酒も合う。']],
+ pizza:[['nama','トマトとチーズにビール。'],['red','軽めの赤で。'],['hb','炭酸でチーズの脂を流す。']],
+ pasta:[['white','魚介・オイル系には白。'],['red','肉・トマト系には赤。'],['nama','気軽にビールでも。']],
+ steak:[['red','渋みが脂をさっぱりさせる。'],['hb','ハイボールでも脂が切れる。'],['rock','芋焼酎のロックも肉に負けない。']],
+ nabe:[['sake','寄せ鍋・水炊きに燗酒。'],['mizu','もつ鍋に焼酎のお湯割り。'],['sour','キムチ鍋にはレモンサワー。']],
+ cheese:[['red','熟成チーズに赤。'],['white','フレッシュなチーズに白。'],['ume','クリームチーズに梅酒の甘酸っぱさ。'],['wsk','燻製チーズにウイスキーを少し。']],
+ ramen:[['nonal','締めはノンアルかお水に切り替えると、翌朝が楽。'],['nama','どうしてもなら小さめを1杯だけ。']],
+ chazuke:[['nonal','締めはお茶とお水で。'],['sake','ぬる燗をほんの少し。']],
+ rice:[['sake','米には米の酒。'],['nonal','お水やノンアルで一息。']]
+};
+const PAIR_REP={beer:'nama',whisky:'hb',sour:'sour',shochu:'mizu',sake:'sake',wine:'red',ume:'ume',china:'china'};
+function pairsFor(kind,id){
+  if(kind==='food')return (FPAIR[id]||[]).filter(([d])=>byId[d]).map(([d,w])=>['drink',d,w]);
+  const d=byId[id];if(!d)return [];
+  const hit=t=>Object.entries(FPAIR).filter(([f])=>fById[f]).map(([f,L])=>{const m=L.find(x=>x[0]===t);return m?['food',f,m[1]]:null}).filter(Boolean);
+  let out=hit(id);if(out.length<2&&PAIR_REP[d.cat]&&PAIR_REP[d.cat]!==id)out=out.concat(hit(PAIR_REP[d.cat]).filter(x=>!out.some(y=>y[1]===x[1])));
+  return out.slice(0,4);
+}
+let pairNeta={},fpFood=null;
 function renderPair(){
   const sh=curShop();if(!genre)genre=sh?sh.genre:'izakaya';
   const last=dayDrinks(todayK()).filter(e=>e.did).pop(),lastCat=last?byId[last.did].cat:null;
@@ -1355,14 +1451,20 @@ function renderPair(){
   const G=GENRES[genre];
   $('genreBody').innerHTML=`<div class="row between"><h2>${G.label}での取り合わせ</h2>${sh&&sh.genre===genre?'<span class="badge">いまのお店</span>':''}</div><div class="sub" style="margin-top:4px">${G.tip}</div>
    <div class="pairs">${G.pairs.map(p=>{const d=byId[p[1]],hit=lastCat&&d.cat===lastCat;return `<div class="pair${hit?' hit':''}"><div class="pl">${p[0]}<span class="x">×</span><button class="dr" data-info="${p[1]}">${d.name}</button>${hit?'<span class="badge">いま飲んでる系統</span>':''}</div><div class="why">${p[2]}</div></div>`}).join('')}</div>
-   ${G.neta.length?`<div class="alert ok" style="margin-top:10px"><b>一ネタ</b><span>${G.neta[0]}</span></div>`:''}
+   ${G.neta.length?(()=>{const n=G.neta.length,i=(pairNeta[genre]||0)%n;return `<div class="alert ok" style="margin-top:10px"><b>一ネタ${n>1?` <small class="num">${i+1}/${n}</small>`:''}</b><span>${G.neta[i]}</span>${n>1?'<button class="btn ghost neta-next" id="pairNetaNext">次の一ネタ ▶</button>':''}</div>`})():''}
    <div class="sub" style="margin-top:8px">お酒の名前をタップすると豆知識が開きます。</div>`;
   $('pairChips').innerHTML=Object.entries(PAIR).map(([k,v])=>`<button class="chip" data-c="${k}" aria-pressed="${k===pairCat}">${v.label}</button>`).join('');
   const P=PAIR[pairCat];
+  if(!fpFood||!FPAIR[fpFood]){const lf=st.entries.filter(e=>e.fid&&FPAIR[e.fid]).pop();fpFood=lf?lf.fid:'edamame'}
+  $('fpChips').innerHTML=FOODS.filter(f=>FPAIR[f.id]).map(f=>`<button class="chip" data-fp="${f.id}" aria-pressed="${f.id===fpFood}">${f.name}</button>`).join('');
+  $('fpBody').innerHTML=`<div class="pb-list">${pairsFor('food',fpFood).map(([k,d,w])=>`<button class="pb-item" data-info="${d}"><b>${byId[d].name}</b><span>${w}</span></button>`).join('')}</div><div class="sub" style="margin-top:8px">お酒の名前をタップすると豆知識が開きます。</div>`;
   $('pairBody').innerHTML=P.styles.map(s=>`<div class="style"><h3>${s.n}<span>${s.s}</span></h3><div class="foods">${s.f.map(x=>`<span class="food">${x}</span>`).join('')}</div><div class="why">${s.w}</div></div>`).join('');
 }
 $('genreChips').onclick=e=>{const b=e.target.closest('[data-g]');if(!b)return;genre=b.dataset.g;renderPair()};
-$('genreBody').onclick=e=>{const b=e.target.closest('[data-info]');if(b)openSheet(b.dataset.info)};
+$('genreBody').onclick=e=>{if(e.target.closest('#pairNetaNext')){pairNeta[genre]=(pairNeta[genre]||0)+1;renderPair();return}const b=e.target.closest('[data-info]');if(b)openSheet(b.dataset.info)};
+$('fpChips').onclick=e=>{const b=e.target.closest('[data-fp]');if(!b)return;fpFood=b.dataset.fp;renderPair()};
+$('fpBody').onclick=e=>{const b=e.target.closest('[data-info]');if(b)openSheet(b.dataset.info)};
+$('shPair').onclick=e=>{const b=e.target.closest('[data-pid]');if(!b)return;openSheet(b.dataset.pid,null,b.dataset.pk);const pn=$('sheet').querySelector('.panel');if(pn)pn.scrollTop=0};
 $('pairChips').onclick=e=>{const b=e.target.closest('[data-c]');if(!b)return;pairCat=b.dataset.c;renderPair()};
 
 // ---------- ツミとバツ ----------
