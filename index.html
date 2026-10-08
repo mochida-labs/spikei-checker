@@ -297,6 +297,47 @@ table.list td.r,table.list th.r{text-align:right;white-space:nowrap}
 .treecard .tc-h{display:flex;align-items:center;gap:6px;font-family:var(--display);font-weight:700;font-size:14px;color:var(--ok)}
 .treecard svg{width:20px;height:20px}
 .treecard p{margin:4px 0 0;font-size:14.5px;line-height:1.75}
+button.tc-h{width:100%;background:none;border:none;padding:0;text-align:left;cursor:pointer}
+.tc-chev{margin-left:auto;transition:transform .2s;font-size:12px}
+.treecard.shut p{display:none}.treecard.shut .tc-chev{transform:rotate(-90deg)}
+/* クイズ */
+.qz-q{background:var(--surface2);border-radius:12px;padding:12px 14px;font-size:15px;line-height:1.75;margin-top:8px}
+.qz-opts{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.qz-opt{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:12px 14px;font:inherit;font-weight:700;font-size:16px;text-align:left;cursor:pointer}
+.qz-opt.ok{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,var(--surface))}
+.qz-opt.ng{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,var(--surface))}
+.qz-opt:disabled{cursor:default}
+.qz-ex{margin-top:10px;font-size:14px;line-height:1.7}
+.qz-head{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted);font-weight:700}
+.qz-dots{display:flex;gap:4px}.qz-dots i{width:10px;height:10px;border-radius:50%;background:var(--line)}
+.qz-dots i.ok{background:var(--ok)}.qz-dots i.ng{background:var(--bad)}.qz-dots i.cur{outline:2px solid var(--amber);outline-offset:1px}
+.qz-big{font-family:var(--display);font-weight:900;font-size:34px;text-align:center;margin-top:6px}
+.qz-rank{text-align:center;font-weight:700}
+/* 称号 */
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;margin-top:10px}
+.bdg{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;padding:8px 4px;border-radius:12px;background:var(--surface2)}
+.bdg .md{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:900;font-size:22px;border:2px dashed var(--line);color:var(--muted);background:var(--surface)}
+.bdg.on .md{border:3px solid #b8860b;background:radial-gradient(circle at 35% 30%,#ffe9a8,#f2b631 60%,#c98a12);color:#4a3200;box-shadow:0 3px 8px rgba(160,110,0,.35)}
+.bdg b{font-size:12.5px;line-height:1.3}
+.bdg span{font-size:11px;color:var(--muted);line-height:1.35}
+.bdg .bar{width:80%;height:4px;margin-top:2px}
+.bdg:not(.on) b{color:var(--muted)}
+.bpop{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:45;display:flex;align-items:center;gap:10px;background:var(--surface);color:var(--ink);border:2px solid #d9a21b;border-radius:16px;padding:10px 16px;box-shadow:0 10px 30px rgba(0,0,0,.25);animation:bpop 3.2s ease forwards;pointer-events:none;max-width:calc(100% - 32px)}
+.bpop[hidden]{display:none}
+.bpop .md{width:40px;height:40px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:900;font-size:18px;background:radial-gradient(circle at 35% 30%,#ffe9a8,#f2b631 60%,#c98a12);color:#4a3200;border:2px solid #b8860b}
+.bpop small{display:block;font-size:11px;color:var(--muted);font-weight:700}
+.bpop b{font-family:var(--display);font-size:16px}
+@keyframes bpop{0%{opacity:0;transform:translate(-50%,-30px) scale(.9)}10%{opacity:1;transform:translate(-50%,0) scale(1.04)}16%{transform:translate(-50%,0) scale(1)}85%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-20px)}}
+/* 白書 */
+.hk-top{display:flex;gap:12px;align-items:center;margin-top:8px}
+.hk-top svg{width:84px;height:56px;flex:none}
+.hk-say{background:var(--surface2);border-radius:12px;padding:8px 12px;font-size:14px;font-weight:700;line-height:1.6;position:relative}
+.hk-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+.hk-grid .stat .v{font-size:21px}
+.hk-grid .stat .s{font-size:11.5px;color:var(--muted);margin-top:2px}
+.hk-rank{margin-top:10px}
+.hk-rank h3{margin:10px 0 4px;font-size:13px;color:var(--muted)}
+.hk-rank ol{margin:0;padding-left:1.4em;font-size:14px;line-height:1.8}
 .sh-foot{position:sticky;bottom:calc(-18px - env(safe-area-inset-bottom,0px));margin:4px -16px calc(-18px - env(safe-area-inset-bottom,0px));padding:10px 16px calc(14px + env(safe-area-inset-bottom,0px));background:linear-gradient(to bottom,transparent,var(--surface) 22%)}
 .sh-close{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;border:none;border-radius:16px;padding:14px 16px;background:var(--amber);color:var(--amber-ink);font-family:var(--display);font-weight:900;font-size:19px;letter-spacing:.06em;box-shadow:0 6px 16px color-mix(in srgb,var(--amber) 40%,transparent);transition:transform .1s}
 .sh-close:active{transform:scale(.97)}
@@ -341,7 +382,7 @@ table.list td.r,table.list th.r{text-align:right;white-space:nowrap}
 @keyframes bub{0%{opacity:0;transform:translate(var(--x),0) scale(.5)}20%{opacity:1}100%{opacity:0;transform:translate(calc(var(--x) * 1.6),-90px) scale(1.1)}}
 /* 下タブ */
 nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));z-index:5}
-nav.tabs .in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:2px}
+nav.tabs .in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(6,1fr);gap:2px}
 nav.tabs button{border:none;background:transparent;border-radius:10px;padding:6px 0;font-size:10.5px;font-weight:700;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;white-space:nowrap}
 nav.tabs svg{width:24px;height:24px}
 nav.tabs button[aria-selected="true"]{color:var(--ink);background:var(--surface2)}
@@ -460,6 +501,10 @@ nav.tabs button[aria-selected="true"] svg{color:var(--amber)}
     <div class="cal" id="cal"></div>
     <div class="legend"><span><i style="background:var(--surface)"></i>休＝休肝日</span><span><i style="background:color-mix(in srgb,var(--amber) 22%,var(--surface))"></i>目安まで</span><span><i style="background:color-mix(in srgb,var(--amber) 48%,var(--surface))"></i>2倍まで</span><span><i style="background:color-mix(in srgb,var(--warn) 70%,var(--surface))"></i>3倍まで</span><span><i style="background:color-mix(in srgb,var(--bad) 72%,var(--surface))"></i>それ以上</span></div>
   </div>
+  <div class="card" id="hakusho">
+    <h2 id="hkTitle">のんべえ白書</h2>
+    <div id="hkBody"></div>
+  </div>
   <div class="card" id="dayDetail"></div>
   <div class="card">
     <h2>お店ログ</h2>
@@ -554,6 +599,23 @@ nav.tabs button[aria-selected="true"] svg{color:var(--amber)}
 </section>
 
 <!-- 設定 -->
+<section class="tab" id="tab-play" hidden>
+  <div class="card" id="quizCard">
+    <h2>豆知識クイズ</h2>
+    <div id="quiz"></div>
+  </div>
+  <div class="card" id="badgeCard">
+    <h2>称号</h2>
+    <div class="sub" id="badgeCount" style="margin-top:2px"></div>
+    <div class="badges" id="badges"></div>
+  </div>
+  <div class="card">
+    <h2>知識コレクション</h2>
+    <div class="sub">頼むたびに違う豆知識が出ます。読んだ数がたまっていきます。</div>
+    <div id="collection" style="margin-top:10px"></div>
+  </div>
+</section>
+
 <section class="tab" id="tab-set" hidden>
   <div class="card">
     <h2>お酒レベル</h2>
@@ -561,9 +623,9 @@ nav.tabs button[aria-selected="true"] svg{color:var(--amber)}
     <div class="seg" id="levelSeg" style="margin-top:10px"><button data-l="1">初級者</button><button data-l="2">中級者</button><button data-l="3">上級者</button><button data-l="4">達人</button><button data-l="5">変人</button></div>
   </div>
   <div class="card">
-    <h2>知識コレクション</h2>
-    <div class="sub">頼むたびに違う豆知識が出ます。読んだ数がたまっていきます。</div>
-    <div id="collection" style="margin-top:10px"></div>
+    <h2>樹木医の一ネタ</h2>
+    <div class="sub">頼んだときの豆知識の下に、木や植物にまつわる一ネタを出します。出したときも、見出しをタップすれば折りたためます。</div>
+    <div class="seg" id="treeSeg" style="margin-top:10px"><button data-v="1">出す</button><button data-v="0">出さない</button></div>
   </div>
   <div class="card">
     <h2>プロフィール</h2>
@@ -619,6 +681,7 @@ nav.tabs button[aria-selected="true"] svg{color:var(--amber)}
   <button role="tab" data-tab="cal" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>カレンダー</button>
   <button role="tab" data-tab="pair" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14a7 7 0 0 1-14 0z"/><path d="M8 9c0-2 2-2 2-4M13 9c0-2 2-2 2-4"/></svg>ペアリング</button>
   <button role="tab" data-tab="tsumi" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8.5 10a3.5 3.5 0 0 1 7 0"/><path d="M12 10l1.5-2"/></svg>ツミとバツ</button>
+  <button role="tab" data-tab="play" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4"/><path d="M12 13v4M8.5 21h7M10 17h4v4h-4z"/></svg>あそぶ</button>
   <button role="tab" data-tab="set" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg>設定</button>
 </div></nav>
 
@@ -638,6 +701,7 @@ nav.tabs button[aria-selected="true"] svg{color:var(--amber)}
 </div></div>
 
 <div class="cheers" id="cheers" hidden aria-hidden="true"></div>
+<div class="bpop" id="bpop" hidden role="status"></div>
 <div class="sheet" id="sheet" hidden><div class="panel" role="dialog" aria-modal="true" aria-labelledby="shName">
   <div class="grab"></div>
   <div class="ordered" id="shOrdered"><span id="shOrderedTxt"></span><button id="shUndo">取り消す</button></div>
@@ -649,7 +713,7 @@ nav.tabs button[aria-selected="true"] svg{color:var(--amber)}
     <div class="lvname" id="shLvName"></div>
     <ul class="facts" id="shFacts"></ul>
     <div class="pairbox" id="shPair" hidden><div class="pb-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h7l-1 8a2.5 2.5 0 0 1-5 0z"/><path d="M8.5 13.5V20M6 20h5"/><path d="M15 3v7a2 2 0 0 0 4 0V3M17 10v10"/></svg><span id="shPairH">合わせるなら</span></div><div class="pb-list" id="shPairList"></div></div>
-    <div class="treecard" id="shTree" hidden><div class="tc-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22v-7"/><path d="M12 15c-4 0-7-2.5-7-6a5 5 0 0 1 4-4.9A4 4 0 0 1 15.5 4 4.5 4.5 0 0 1 19 9c0 3.5-3 6-7 6z"/><path d="M12 15l-3-3M12 13l3-3"/></svg>樹木医の一ネタ</div><p id="shTreeTxt"></p></div>
+    <div class="treecard" id="shTree" hidden><button class="tc-h" id="shTreeTg" aria-expanded="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22v-7"/><path d="M12 15c-4 0-7-2.5-7-6a5 5 0 0 1 4-4.9A4 4 0 0 1 15.5 4 4.5 4.5 0 0 1 19 9c0 3.5-3 6-7 6z"/><path d="M12 15l-3-3M12 13l3-3"/></svg>樹木医の一ネタ<span class="tc-chev" aria-hidden="true">▼</span></button><p id="shTreeTxt"></p></div>
     <div class="row between" id="shMoreRow"><span class="sub num" id="shProg"></span><button class="btn ghost" id="shMore" style="padding:6px 14px">次の豆知識 ▶</button></div>
   </div>
   <div id="shBrand" hidden></div>
@@ -902,7 +966,7 @@ let TREE={};
 function mergeTrivia(T){if(T._tree)TREE=T._tree;Object.keys(T).forEach(id=>{if(id[0]==='_')return;const tgt=byId[id]?INFO:(fById[id]?FINFO:null);if(!tgt)return;tgt[id]=tgt[id]||{};for(const lv of ['1','2','3','4','5']){const add=(T[id][lv]||[]).filter(t=>typeof t==='string'&&t.trim());const cur=tgt[id][lv]||[];const seen=new Set(cur);tgt[id][lv]=cur.concat(add.filter(t=>!seen.has(t)))}})}
 // ---------- 状態 ----------
 let st={sizePref:{},customD:[],customF:[],cond:'mid',work:{on:true,time:'07:00'},floatOn:true,entries:[],daily:{},limit:20,mode:'liver',level:2,prof:{sex:'m',age:50,h:170,act:1.75},weights:{},shops:[],cur:{},review:{},sample:false};
-function save(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}scheduleBadges()}
 function load(){try{const s=localStorage.getItem(KEY);if(s){st=Object.assign(st,JSON.parse(s));return true}}catch(e){}return false}
 const pad=n=>String(n).padStart(2,'0');
 const dk=d=>{d=new Date(d);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
@@ -1305,7 +1369,7 @@ function renderSheet(){
    $('shPairList').innerHTML=PL.map(([k,id,w])=>{const it=k==='drink'?byId[id]:fById[id];return `<button class="pb-item" data-pk="${k}" data-pid="${id}"><b>${it.name}</b><span>${w}</span></button>`}).join('')}
   $('shFacts').innerHTML=n?show.map(t=>`<li>${t}</li>`).join(''):'<li class="sub">このレベルの豆知識はまだありません。</li>';
   $('shMoreRow').hidden=n<=PER;
-  {const pool=(TREE[shId]||[]).concat(TREE._general||[]);$('shTree').hidden=!pool.length;
+  {const pool=(TREE[shId]||[]).concat(TREE._general||[]);$('shTree').hidden=!pool.length||st.treeOn===false;$('shTree').classList.toggle('shut',!!st.treeShut);$('shTreeTg').setAttribute('aria-expanded',!st.treeShut);
    if(pool.length){if(shStart.tree==null){const k=`tree:${shId}`;shStart.tree=st.tp[k]||0;st.tp[k]=shStart.tree+1;save()}$('shTreeTxt').textContent=pool[orderOf('tree:'+shId,pool.length)[shStart.tree%pool.length]]}}
   const rd=Math.min(n,st.tr[key]||0);$('shProg').textContent=n?(rd>=n?`この段階の${n}件をすべて読みました`:`この段階：${rd} / ${n}件 読んだ`):'';
   const B=dr?(BRANDS[brandKey(shId)]||[]):(FBRANDS[shId]||[]);
@@ -1396,6 +1460,7 @@ function renderCal(){
   $('sMonthK').textContent=(calY===now.getFullYear()&&calM===now.getMonth())?'今月のお酒':`${calM+1}月のお酒`;
   $('sMonth').innerHTML=fmtG(mSum)+'<small>g</small>';
   $('sRest').innerHTML=rest+'<small>日</small>';
+  renderHakusho();
   $('sAvg').innerHTML=(drinkDays?fmtG(mSum/drinkDays):'0')+'<small>g</small>';
   // 詳細
   const all=dayAll(selK),g=daySumG(selK),kc=dayKcal(selK),[,mm,dd]=selK.split('-'),d=st.daily[selK],shopIds=[...new Set(all.map(e=>e.shop).filter(Boolean))];
@@ -1533,7 +1598,7 @@ $('wSave').onclick=()=>{const v=+$('wIn').value;if(!(v>20&&v<300)){toast('体重
 function renderCollection(){const lvN=['','初級者','中級者','上級者','達人','変人'];let tot=0,rd=0;const by=[0,0,0,0,0,0],byR=[0,0,0,0,0,0];
   [['drink',INFO],['food',FINFO]].forEach(([k,I])=>Object.keys(I).forEach(id=>{for(let lv=1;lv<=5;lv++){const n=(I[id][lv]||[]).length;const r=Math.min(n,((st.tr||{})[`${id}:${lv}`])||0);tot+=n;rd+=r;by[lv]+=n;byR[lv]+=r}}));
   $('collection').innerHTML=`<div class="row between"><b class="num" style="font-family:var(--display);font-size:24px">${rd} <small class="sub">/ ${tot}件</small></b><span class="sub num">${tot?Math.floor(rd/tot*100):0}%</span></div><div class="bar" style="margin-top:6px"><i style="width:${tot?rd/tot*100:0}%"></i></div><div class="meta" style="margin-top:8px">${[1,2,3,4,5].map(l=>`<span class="pill num">${lvN[l]} ${byR[l]}/${by[l]}</span>`).join('')}</div>`}
-function renderSet(){renderCollection();
+function renderSet(){document.querySelectorAll('#treeSeg button').forEach(b=>b.setAttribute('aria-pressed',(b.dataset.v==='1')===(st.treeOn!==false)));
   document.querySelectorAll('#levelSeg button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.l===st.level));
   document.querySelectorAll('#limitSeg button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.l===st.limit));
   document.querySelectorAll('#sexSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st.prof.sex));
@@ -1556,12 +1621,167 @@ let resetArm=false;
 $('resetAll').onclick=()=>{if(!resetArm){resetArm=true;$('resetAll').textContent='本当に消す';$('resetMsg').textContent='もう一度押すと消えます';setTimeout(()=>{resetArm=false;$('resetAll').textContent='すべての記録を消す';$('resetMsg').textContent=''},4000);return}
   st.entries=[];st.daily={};st.weights={};st.shops=[];st.cur={};st.review={};st.sample=false;save();resetArm=false;$('resetAll').textContent='すべての記録を消す';$('resetMsg').textContent='';renderAll();toast('記録を消しました')};
 
+// ---------- 樹木医の一ネタ：出す/出さない・折りたたみ ----------
+$('treeSeg').onclick=e=>{const b=e.target.closest('[data-v]');if(!b)return;st.treeOn=b.dataset.v==='1';save();renderSet();toast(st.treeOn?'樹木医の一ネタを出します':'樹木医の一ネタを出さないようにしました')};
+$('shTreeTg').onclick=()=>{st.treeShut=!st.treeShut;save();$('shTree').classList.toggle('shut',st.treeShut);$('shTreeTg').setAttribute('aria-expanded',!st.treeShut)};
+
+// ---------- あそぶ：豆知識クイズ ----------
+const QKEYS={nama:['生ビール','ビール','麦酒'],bin:['瓶ビール','ビール','麦酒'],hb:['ハイボール','ウイスキー','ウヰスキー'],sour:['レモンサワー','サワー','チューハイ','酎ハイ'],strong:['ストロング','チューハイ','酎ハイ'],hoppy:['ホッピー'],sake:['日本酒','清酒'],rock:['焼酎','泡盛'],mizu:['焼酎','水割り','お湯割り'],red:['赤ワイン','ワイン'],white:['白ワイン','ワイン'],wsk:['ウイスキー','ウヰスキー'],ume:['梅酒','梅'],china:['紹興酒','黄酒'],nonal:['ノンアルコール','ノンアル'],
+ edamame:['枝豆','えだまめ'],yakko:['冷奴','冷や奴','豆腐'],potesara:['ポテトサラダ','ポテサラ'],karaage:['唐揚げ','から揚げ','からあげ'],yakitori:['焼き鳥','焼鳥'],sashimi:['刺身','刺し身'],gyoza:['餃子','ギョーザ'],dashimaki:['だし巻き','卵焼き','玉子焼き'],tempura:['天ぷら','天麩羅'],motsuni:['もつ煮','もつ'],pizza:['ピッツァ','ピザ'],pasta:['パスタ','スパゲッティ'],steak:['ステーキ'],nabe:['鍋'],cheese:['チーズ'],ramen:['ラーメン'],chazuke:['お茶漬け','茶漬け'],rice:['ご飯','ごはん']};
+const FCAT={chazuke:'rice',rice:'rice'};
+const QLVN=['','初級者','中級者','上級者','達人','変人'];
+let qz={stage:'idle',src:null,qs:[],i:0,res:[]};
+function factPool(src){const out=[];
+  [['drink',INFO,DRINKS],['food',FINFO,FOODS]].forEach(([kind,I,list])=>list.forEach(it=>{const F=I[it.id];if(!F)return;
+    for(let lv=1;lv<=4;lv++){const fs=F[lv]||[];if(!fs.length)continue;
+      let use=fs;if(src==='read'){const r=Math.min(fs.length,((st.tr||{})[`${it.id}:${lv}`])||0);const ord=orderOf(`${it.id}:${lv}`,fs.length);use=ord.slice(0,r).map(j=>fs[j])}
+      use.forEach(t=>{if(t&&t.length>=14)out.push({kind,id:it.id,lv,t})})}}));
+  return out}
+function maskFact(t,kind,id){const it=kind==='drink'?byId[id]:fById[id];const keys=[...new Set([it.name].concat(QKEYS[id]||[]))].sort((a,b)=>b.length-a.length);
+  let m=t;keys.forEach(k=>{m=m.split(k).join('〇〇')});return m.replace(/(〇〇)+/g,'〇〇')}
+function makeQuiz(src){const pool=factPool(src);if(pool.length<5)return null;const used=new Set(),qs=[];let guard=0;
+  while(qs.length<5&&guard++<200){const f=pool[Math.floor(Math.random()*pool.length)];if(used.has(f.t))continue;
+    const list=(f.kind==='drink'?DRINKS:FOODS).filter(x=>(f.kind==='drink'?INFO:FINFO)[x.id]);
+    const catOf=x=>f.kind==='drink'?x.cat:(FCAT[x.id]||x.id);const ans=(f.kind==='drink'?byId:fById)[f.id];
+    const cands=list.filter(x=>x.id!==f.id&&catOf(x)!==catOf(ans)&&!([x.name].concat(QKEYS[x.id]||[])).some(k=>f.t.includes(k)));
+    if(cands.length<2)continue;const pick=[];while(pick.length<2){const c=cands[Math.floor(Math.random()*cands.length)];if(!pick.includes(c)&&!pick.some(p=>catOf(p)===catOf(c)))pick.push(c);if(pick.length<2&&cands.every(c2=>pick.includes(c2)||pick.some(p=>catOf(p)===catOf(c2))))break}
+    if(pick.length<2)continue;used.add(f.t);
+    const opts=[ans,...pick].map(x=>x.id).sort(()=>Math.random()-.5);qs.push({...f,q:maskFact(f.t,f.kind,f.id),opts})}
+  return qs.length===5?qs:null}
+function quizSrcDefault(){return factPool('read').length>=15?'read':'all'}
+function renderQuiz(){const el=$('quiz');st.quiz=st.quiz||{played:0,perfect:0,best:0,correct:0};const Q=st.quiz;
+  if(qz.stage==='idle'){const src=qz.src||quizSrcDefault(),nRead=factPool('read').length;
+    el.innerHTML=`<div class="sub" style="margin-top:4px">豆知識の一部を「〇〇」で隠します。何の話か3択で当ててください。全5問。</div>
+     <div class="seg" id="qzSrc" style="margin-top:10px"><button data-s="read" aria-pressed="${src==='read'}" ${nRead<15?'disabled':''}>読んだネタから（${nRead}件）</button><button data-s="all" aria-pressed="${src==='all'}">ぜんぶから</button></div>
+     ${nRead<15?'<div class="sub" style="margin-top:6px">読んだネタが15件たまると「読んだネタから」で遊べます。</div>':''}
+     <button class="btn" id="qzStart" style="margin-top:12px;width:100%">クイズをはじめる</button>
+     <div class="sub num" style="margin-top:8px">これまで ${Q.played}回挑戦・全問正解 ${Q.perfect}回・最高 ${Q.best}/5</div>`;return}
+  const dots=`<div class="qz-dots">${[0,1,2,3,4].map(j=>`<i class="${qz.res[j]===true?'ok':qz.res[j]===false?'ng':''}${j===qz.i&&qz.stage!=='done'?' cur':''}"></i>`).join('')}</div>`;
+  if(qz.stage==='done'){const sc=qz.res.filter(Boolean).length;const rank=sc===5?'全問正解！スピ系マスター級':sc===4?'お見事。かなりの物知り':sc===3?'なかなか。あと一歩':sc===2?'まだまだ伸びしろあり':'次の一杯で豆知識を読もう';
+    el.innerHTML=`<div class="qz-head"><span>結果</span>${dots}</div><div class="qz-big num">${sc} / 5</div><div class="qz-rank">${rank}</div>
+     <div class="row" style="gap:8px;margin-top:12px"><button class="btn" id="qzAgain" style="flex:1">もう一回</button><button class="btn ghost" id="qzBack" style="flex:1">もどる</button></div>`;return}
+  const q=qz.qs[qz.i],it=id=>(q.kind==='drink'?byId:fById)[id],ans=qz.stage==='ans';
+  el.innerHTML=`<div class="qz-head"><span>第${qz.i+1}問 ・ ${q.kind==='drink'?'お酒':'つまみ'}・${QLVN[q.lv]}</span>${dots}</div>
+   <div class="qz-q">${q.q}</div><div class="sub" style="margin-top:6px">これは、どれの話？</div>
+   <div class="qz-opts">${q.opts.map(id=>`<button class="qz-opt${ans?(id===q.id?' ok':id===qz.pick?' ng':''):''}" data-q="${id}" ${ans?'disabled':''}>${it(id).name}</button>`).join('')}</div>
+   ${ans?`<div class="qz-ex"><b style="color:${qz.pick===q.id?'var(--ok)':'var(--bad)'}">${qz.pick===q.id?'正解！':'ざんねん'}</b> 答えは「${it(q.id).name}」。<br>${q.t}</div>
+   <div class="row" style="gap:8px;margin-top:10px"><button class="btn ghost" id="qzOpen" style="flex:1">この豆知識を開く</button><button class="btn" id="qzNext" style="flex:1">${qz.i<4?'次の問題 ▶':'結果を見る'}</button></div>`:''}`}
+$('quiz').onclick=e=>{
+  const s=e.target.closest('#qzSrc [data-s]');if(s&&!s.disabled){qz.src=s.dataset.s;renderQuiz();return}
+  if(e.target.closest('#qzStart')||e.target.closest('#qzAgain')){const src=qz.src||quizSrcDefault(),qs=makeQuiz(src)||makeQuiz('all');if(!qs){toast('問題を作れませんでした');return}qz={stage:'q',src,qs,i:0,res:[]};renderQuiz();$('quizCard').scrollIntoView({behavior:'smooth',block:'start'});return}
+  if(e.target.closest('#qzBack')){qz={stage:'idle',src:qz.src,qs:[],i:0,res:[]};renderQuiz();return}
+  const o=e.target.closest('[data-q]');if(o&&qz.stage==='q'){const q=qz.qs[qz.i];qz.pick=o.dataset.q;qz.res[qz.i]=qz.pick===q.id;qz.stage='ans';try{navigator.vibrate&&navigator.vibrate(qz.res[qz.i]?15:[30,40,30])}catch(_){}renderQuiz();return}
+  if(e.target.closest('#qzOpen')){const q=qz.qs[qz.i];openSheet(q.id,null,q.kind);return}
+  if(e.target.closest('#qzNext')){if(qz.i<4){qz.i++;qz.stage='q';qz.pick=null;renderQuiz()}else{qz.stage='done';const sc=qz.res.filter(Boolean).length,Q=st.quiz;Q.played++;Q.correct+=sc;if(sc===5)Q.perfect++;Q.best=Math.max(Q.best,sc);save();renderQuiz();renderBadges()}}
+};
+
+// ---------- あそぶ：称号 ----------
+function badgeStats(){
+  const L=st.limit,tk=todayK(),gMap={},days=new Set(Object.keys(st.daily||{}));
+  const byDayD={},byDayF={};
+  st.entries.forEach(e=>{const k=dayOf(e.ts);days.add(k);if(e.kind==='drink'){gMap[k]=(gMap[k]||0)+e.g;if(e.did)(byDayD[k]=byDayD[k]||new Set()).add(e.did)}else if(e.fid)(byDayF[k]=byDayF[k]||new Set()).add(e.fid)});
+  const S={rest:0,restRun:0,within:0,week2:0,week2Run:0,water:0,nonal:0,read:0,tot:0,hen:0,tree:0,pair:0,foods:0,genres:0,days:days.size,q:st.quiz||{}};
+  const first=[...days].sort()[0];
+  if(first){let k=first,run=0,wrun=0,n=0,wkRest=0,wRun=0;
+    while(k<tk&&n++<800){const g=gMap[k]||0;
+      if(g===0){S.rest++;run++;S.restRun=Math.max(S.restRun,run)}else run=0;
+      if(g<=L){wrun++;S.within=Math.max(S.within,wrun)}else wrun=0;
+      const [y,m,d]=k.split('-').map(Number),dow=(new Date(y,m-1,d).getDay()+6)%7;if(g===0)wkRest++;
+      if(dow===6){if(wkRest>=2){S.week2++;wRun++;S.week2Run=Math.max(S.week2Run,wRun)}else wRun=0;wkRest=0}
+      k=addDays(k,1)}}
+  Object.values(st.daily||{}).forEach(d=>S.water+=d.water||0);
+  S.nonal=st.entries.filter(e=>e.did==='nonal').length;
+  [INFO,FINFO].forEach(I=>Object.keys(I).forEach(id=>{for(let lv=1;lv<=5;lv++){const n=(I[id][lv]||[]).length,r=Math.min(n,((st.tr||{})[`${id}:${lv}`])||0);S.tot+=n;S.read+=r;if(lv===5)S.hen+=r}}));
+  Object.entries(st.tp||{}).forEach(([k,v])=>{if(k.startsWith('tree:'))S.tree+=v});
+  Object.keys(byDayF).forEach(k=>{const D=byDayD[k];if(!D)return;byDayF[k].forEach(f=>(FPAIR[f]||[]).forEach(([d])=>{if(D.has(d))S.pair++}))});
+  S.foods=new Set(st.entries.filter(e=>e.fid).map(e=>e.fid)).size;
+  const shopIds=new Set(st.entries.map(e=>e.shop).filter(Boolean));S.genres=new Set(st.shops.filter(x=>shopIds.has(x.id)).map(x=>x.genre)).size;
+  return S}
+const BADGES=[
+ ['rest1','休','休肝日デビュー','休肝日を1日つくる',S=>[S.rest,1]],
+ ['rest3','連','カンゾウさんの連休','休肝日を3日連続',S=>[S.restRun,3]],
+ ['week2','週','週2休肝の人','月〜日で休肝日2日以上',S=>[S.week2,1]],
+ ['week2x4','匠','休ませ上手','週2休肝を4週連続',S=>[S.week2Run,4]],
+ ['within7','程','ほどほどの人','7日連続で1日の目安以内',S=>[S.within,7]],
+ ['within30','節','節度の鬼','30日連続で1日の目安以内',S=>[S.within,30]],
+ ['water10','水','和らぎ水の人','お水を10回記録',S=>[S.water,10]],
+ ['water50','泉','水の番人','お水を50回記録',S=>[S.water,50]],
+ ['nonal5','ノ','ノンアル名人','ノンアルを5回',S=>[S.nonal,5]],
+ ['read50','知','物知りのんべえ','豆知識を50件読む',S=>[S.read,50]],
+ ['read200','典','歩く酒事典','豆知識を200件読む',S=>[S.read,200]],
+ ['read500','博','酒の生き字引','豆知識を500件読む',S=>[S.read,500]],
+ ['readAll','極','スピ系マスター','豆知識をぜんぶ読む',S=>[S.read,S.tot||1]],
+ ['hen10','変','変人の入口','変人レベルを10件読む',S=>[S.hen,10]],
+ ['tree30','樹','樹木医の弟子','樹木医の一ネタを30回',S=>[S.tree,30]],
+ ['quiz1','問','クイズ初挑戦','クイズに1回挑戦',S=>[S.q.played||0,1]],
+ ['quiz5','王','クイズ王','クイズで全問正解',S=>[S.q.perfect||0,1]],
+ ['pair10','合','合わせ上手','おすすめの組み合わせを10回',S=>[S.pair,10]],
+ ['foods10','肴','つまみ道','つまみを10種類',S=>[S.foods,10]],
+ ['genre5','暖','のれん通','5ジャンルのお店で記録',S=>[S.genres,5]],
+ ['genreAll','番','ペアリング番長','全ジャンルのお店で記録',S=>[S.genres,Object.keys(GENRES).length]],
+ ['days30','録','記録の鬼','30日分の記録',S=>[S.days,30]]
+];
+function badgeState(){const S=badgeStats();st.badges=st.badges||{};return BADGES.map(([id,gl,nm,ds,f])=>{const [c,g]=f(S);return {id,gl,nm,ds,c:Math.min(c,g),g,on:c>=g||!!st.badges[id],at:st.badges[id]}})}
+function renderBadges(){const B=badgeState(),n=B.filter(b=>b.on).length;
+  $('badgeCount').textContent=`${n} / ${B.length} 獲得`;
+  $('badges').innerHTML=B.map(b=>`<div class="bdg${b.on?' on':''}"><div class="md">${b.gl}</div><b>${b.nm}</b><span>${b.on?(b.at?b.at.slice(5).replace('-','/')+' 獲得':'獲得'):b.ds}</span>${b.on?'':`<div class="bar"><i style="width:${b.c/b.g*100}%"></i></div><span class="num">${Math.floor(b.c)} / ${b.g}</span>`}</div>`).join('')}
+let badgeT=null;
+function scheduleBadges(){clearTimeout(badgeT);badgeT=setTimeout(checkBadges,700)}
+function checkBadges(){if(st.sample)return;let B;try{B=badgeState()}catch(e){return}st.badges=st.badges||{};
+  const neu=B.filter(b=>b.on&&!st.badges[b.id]);if(!neu.length)return;const tk=todayK();neu.forEach(b=>st.badges[b.id]=tk);
+  try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}
+  const b=neu[0],el=$('bpop');el.hidden=true;void el.offsetWidth;
+  el.innerHTML=`<div class="md">${b.gl}</div><div><small>称号ゲット！</small><b>${b.nm}</b>${neu.length>1?`<small>ほか${neu.length-1}個</small>`:''}</div>`;el.hidden=false;
+  try{navigator.vibrate&&navigator.vibrate([20,60,20,60,40])}catch(e){}
+  clearTimeout(el._t);el._t=setTimeout(()=>{el.hidden=true},3300);
+  if(!$('tab-play').hidden)renderBadges()}
+function renderPlay(){renderQuiz();renderBadges();renderCollection()}
+
+// ---------- カレンダー：のんべえ白書 ----------
+function renderHakusho(){
+  const now=new Date(),tk=todayK(),L=st.limit,pre=`${calY}-${pad(calM+1)}`,cur=calY===now.getFullYear()&&calM===now.getMonth();
+  $('hkTitle').textContent=`${calM+1}月ののんべえ白書`;
+  const days=new Date(calY,calM+1,0).getDate();let sum=0,dd=0,rest=0,over=0,max=null,kc=0,el=0;
+  for(let d=1;d<=days;d++){const k=dk(new Date(calY,calM,d));if(k>tk)break;el++;const g=daySumG(k);sum+=g;kc+=dayKcal(k);if(g>0){dd++;if(g>L)over++;if(!max||g>max.g)max={k,g}}else if(k<tk)rest++}
+  const es=st.entries.filter(e=>dayOf(e.ts).startsWith(pre));
+  if(!el||!es.length){$('hkBody').innerHTML=`<div class="sub" style="margin-top:6px">${el?'この月の記録はまだありません。':'まだ始まっていない月です。'}</div>`;return}
+  const top=(arr)=>{const c={};arr.forEach(x=>c[x]=(c[x]||0)+1);return Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,3)};
+  const tD=top(es.filter(e=>e.kind==='drink').map(e=>e.name.replace(/（.*?）/,''))),tF=top(es.filter(e=>e.kind==='food').map(e=>e.name));
+  const combo={};const byDay={};es.forEach(e=>{const k=dayOf(e.ts);(byDay[k]=byDay[k]||{d:new Set(),f:new Set()})[e.kind==='drink'?'d':'f'].add(e.kind==='drink'?((byId[e.did]||{}).name||e.name.replace(/（.*?）/,'')):e.name)});
+  Object.values(byDay).forEach(x=>x.d.forEach(a=>x.f.forEach(b=>{const key=a+' × '+b;combo[key]=(combo[key]||0)+1})));
+  const cb=Object.entries(combo).sort((a,b)=>b[1]-a[1])[0];
+  const shopDays={};es.forEach(e=>{if(e.shop)(shopDays[e.shop]=shopDays[e.shop]||new Set()).add(dayOf(e.ts))});
+  const ts=Object.entries(shopDays).sort((a,b)=>b[1].size-a[1].size)[0],tsName=ts?((st.shops.find(x=>x.id===ts[0])||{}).name):null;
+  const hours=sum/alcRate(),restRate=el>1?rest/(el-1):0;
+  let lv,say;
+  if(over>=Math.max(8,el*0.3)){lv=3;say='残業続きでヘトヘト…来月はもう少し休みをください。'}
+  else if(rest===0&&el>=7){lv=2;say='今月はまだ休みが一日もありません。週2日、休ませてください。'}
+  else if(restRate>=2/7&&over<=2){lv=0;say='よく休ませてもらいました。この調子でいきましょう。'}
+  else{lv=1;say='まずまずの1か月。休肝日をあと少し増やせたら満点です。'}
+  const pm=new Date(calY,calM-1,1),ppre=`${pm.getFullYear()}-${pad(pm.getMonth()+1)}`;const prevSum=st.entries.filter(e=>e.kind==='drink'&&dayOf(e.ts).startsWith(ppre)).reduce((a,e)=>a+e.g,0);
+  const tile=(k,v,sub)=>`<div class="stat"><div class="k">${k}</div><div class="v num">${v}</div>${sub?`<div class="s">${sub}</div>`:''}</div>`;
+  $('hkBody').innerHTML=`<div class="hk-top"><svg viewBox="0 0 180 120" aria-hidden="true">${liverSVG(lv)}</svg><div class="hk-say">${say}<div class="sub" style="font-weight:400;margin-top:2px">— カンゾウさん</div></div></div>
+   <div class="hk-grid">
+    ${tile('純アルコール',fmtG(sum)+'<small>g</small>',`生中 約${(sum/14).toFixed(1)}杯分${prevSum?`・先月 ${fmtG(prevSum)}g`:''}`)}
+    ${tile('カンゾウさんの残業',hours.toFixed(1)+'<small>時間</small>',`8時間勤務なら${(hours/8).toFixed(1)}日分`)}
+    ${tile('飲んだ日／休肝日',`${dd}<small>日</small> / ${rest}<small>日</small>`,cur?`${el}日目まで`:'')}
+    ${tile('目安オーバー',over+'<small>日</small>',`1日の目安 ${L}g`)}
+    ${tile('いちばん飲んだ日',max?`${+max.k.slice(5,7)}/${+max.k.slice(8)}`:'—',max?`${fmtG(max.g)}g`:'')}
+    ${tile('飲み食いのカロリー',fmtK(kc)+'<small>kcal</small>',`ご飯 約${Math.round(kc/250)}杯分`)}
+   </div>
+   <div class="hk-rank">
+    ${tD.length?`<h3>よく頼んだお酒</h3><ol>${tD.map(([n,c])=>`<li>${n}<span class="sub num">（${c}回）</span></li>`).join('')}</ol>`:''}
+    ${tF.length?`<h3>よく頼んだつまみ</h3><ol>${tF.map(([n,c])=>`<li>${n}<span class="sub num">（${c}回）</span></li>`).join('')}</ol>`:''}
+    ${cb&&cb[1]>=2?`<h3>今月の名コンビ</h3><div>${cb[0]}<span class="sub num">（${cb[1]}日）</span></div>`:''}
+    ${tsName?`<h3>いちばん通ったお店</h3><div>${tsName}<span class="sub num">（${ts[1].size}日）</span></div>`:''}
+   </div>`}
+
 // ---------- タブ ----------
 document.querySelector('nav.tabs').onclick=e=>{const b=e.target.closest('[data-tab]');if(!b)return;
   document.querySelectorAll('nav.tabs [data-tab]').forEach(x=>x.setAttribute('aria-selected',x===b));
   document.querySelectorAll('section.tab').forEach(s=>s.hidden=s.id!=='tab-'+b.dataset.tab);
   const t=b.dataset.tab;setTimeout(updateFloat,0);
-  if(t==='cal')renderCal();if(t==='pair'){genre=null;pairCat=null;renderPair()}if(t==='tsumi')renderTsumi();if(t==='set')renderSet();if(t==='today')renderToday();setupFolds();
+  if(t==='cal')renderCal();if(t==='pair'){genre=null;pairCat=null;renderPair()}if(t==='tsumi')renderTsumi();if(t==='set')renderSet();if(t==='play')renderPlay();if(t==='today')renderToday();setupFolds();
   window.scrollTo(0,0)};
 
 
@@ -1617,7 +1837,7 @@ $('impMsg').onclick=e=>{if(!e.target.closest('#impOk')||!impPending)return;st=Ob
 fetch('trivia.json',{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(T=>{if(T){mergeTrivia(T);renderSet();if(!$('sheet').hidden)renderSheet()}}).catch(()=>{});
 // ---------- オフライン対応 ----------
 if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
-renderAll();
+renderAll();scheduleBadges();
 })();
 </script>
 
