@@ -327,8 +327,9 @@ nav.tabs button[aria-selected="true"] svg{color:var(--amber)}
     <div class="sub" style="margin-top:8px">きょうの体調</div>
     <div class="seg" id="condSeg" style="margin-top:6px"><button data-c="bad">悪い</button><button data-c="mid">普通</button><button data-c="good">良い</button></div>
     <div class="time"><div><div class="sub">あしたの仕事</div><input type="time" id="workTime" aria-label="あしたの仕事の開始時刻"></div><div class="seg" id="workSeg" style="align-self:end"><button data-w="on">あり</button><button data-w="off">なし</button></div></div>
+    <div class="row between" style="margin-top:10px"><span class="sub">仕事の何時間前に抜けていたいか</span><div class="seg" id="marginSeg" style="min-width:180px"><button data-m="0">なし</button><button data-m="1">1時間</button><button data-m="2">2時間</button></div></div>
     <div class="budget" id="budget"></div>
-    <div class="sub" style="margin-top:8px">体重1kgあたり1時間に約0.1gを基準に、体調が「普通」なら1割、「悪い」なら2.5割遅く見積もります。仕事の1時間前には抜けているかで判定。個人差が大きい目安で、運転してよいかの判断には使えません。</div>
+    <div class="sub" style="margin-top:8px">体重1kgあたり1時間に約0.1gを基準に、体調が「普通」なら1割、「悪い」なら2.5割遅く見積もります。仕事の開始より「何時間前に抜けていたいか」の余裕をみて判定します（運転や通勤があるなら1〜2時間がおすすめ）。個人差が大きい目安で、運転してよいかの判断には使えません。</div>
   </div>
 
   <div class="card" id="reviewCard" hidden>
@@ -856,12 +857,13 @@ function clearInfo(){const now=Date.now(),{rem,rate}=remainAlc(now);const h=rem>
 function workAt(){if(!st.work||!st.work.on||!st.work.time)return null;const [hh,mm]=st.work.time.split(':').map(Number);const d=new Date();d.setHours(hh,mm,0,0);if(d.getTime()<=Date.now())d.setDate(d.getDate()+1);return d}
 const fmtT=d=>`${pad(d.getHours())}:${pad(d.getMinutes())}`;
 const dayLbl=d=>{const t=new Date();t.setHours(0,0,0,0);const x=new Date(d);x.setHours(0,0,0,0);const diff=Math.round((x-t)/864e5);return diff===0?'きょう':diff===1?'あした':`${d.getMonth()+1}/${d.getDate()}`};
-function workBudget(){const w=workAt();if(!w)return null;const {rem,rate}=clearInfo();const hrs=(w.getTime()-3600e3-Date.now())/3600e3;return {w,left:rate*hrs-rem}}
+function workBudget(){const w=workAt();if(!w)return null;const m=st.workMargin??1;const dl=new Date(w.getTime()-m*3600e3);const {rem,rate}=clearInfo();const hrs=(dl.getTime()-Date.now())/3600e3;return {w,dl,m,left:rate*hrs-rem}}
+const dlTxt=wb=>wb.m?`仕事（${fmtT(wb.w)}）の${wb.m}時間前の${fmtT(wb.dl)}`:`仕事の始まる${fmtT(wb.w)}`;
 function renderStatus(){
   const k=todayK(),g=daySumG(k),lv=lvLiver(g),c=clearInfo(),wb=workBudget(),tk=dayKcal(k),T=targetKcal();
   $('fLiver').innerHTML=liverSVG(lv);$('fG').textContent=fmtG(g)+'g';
   const ng=wb&&wb.left<0;
-  $('fGp').textContent=ng?'仕事に残る！':(c.h>0?`${fmtT(c.at)}に抜ける`:`${Math.round(g/st.limit*100)}%`);
+  $('fGp').textContent=ng?'仕事前に抜けない！':(c.h>0?`${fmtT(c.at)}に抜ける`:`${Math.round(g/st.limit*100)}%`);
   $('fGp').classList.toggle('ng',!!ng);
   $('fSto').innerHTML=stoSVG(lvSto(tk,T));$('fK').textContent=fmtK(tk)+'kcal';$('fKp').textContent=Math.round(tk/T*100)+'%';
   updateFloat();
@@ -961,12 +963,13 @@ function renderToday(){
   document.querySelectorAll('#condSeg button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.c===st.cond));
   document.querySelectorAll('#workSeg button').forEach(x=>x.setAttribute('aria-pressed',(x.dataset.w==='on')===!!st.work.on));
   if(document.activeElement!==$('cW'))$('cW').value=latestWeight().toFixed(1);
+  document.querySelectorAll('#marginSeg button').forEach(x=>x.setAttribute('aria-pressed',+x.dataset.m===(st.workMargin??1)));
   $('workTime').value=st.work.time;$('workTime').disabled=!st.work.on;
   $('rateTxt').textContent=`分解の速さ 約${alcRate().toFixed(1)}g/時`;
   {const c=clearInfo(),wb=workBudget();let h='';
    h+=c.h>0?`いまのアルコールが抜けるのは <b class="num">${dayLbl(c.at)} ${fmtT(c.at)}ごろ</b>（あと約${c.h.toFixed(1)}時間）。`:'いま体内のアルコールはほぼゼロ。';
-   if(wb){if(wb.left<0)h+=`<br><b style="color:var(--bad)">あしたの仕事（${fmtT(wb.w)}）に残る計算です。きょうはもう飲まないで。</b>`;
-     else{const n=Math.floor(wb.left/gOf(350,5));h+=`<br>仕事（${fmtT(wb.w)}）の1時間前に抜けるには、ここから <b class="num">約${Math.floor(wb.left)}g</b> が上限（${n>0?`生中なら${n}杯分`:'生中1杯も入りません'}）。1日の目安とは別の、超えてはいけない線です。`}}
+   if(wb){if(wb.left<0)h+=`<br><b style="color:var(--bad)">${dlTxt(wb)}までに抜けない計算です。きょうはもう飲まないで。</b>`;
+     else{const n=Math.floor(wb.left/gOf(350,5));h+=`<br>${dlTxt(wb)}までに抜けるには、ここから <b class="num">約${Math.floor(wb.left)}g</b> が上限（${n>0?`生中なら${n}杯分`:'生中1杯も入りません'}）。1日の目安とは別の、超えてはいけない線です。`}}
    $('budget').innerHTML=h;}
   // 警告
   const A=[],dly=daily(k);
@@ -976,7 +979,7 @@ function renderToday(){
   if(hr.length>=3||hrG>=30)A.push(['warn','ペース速め',`この1時間で ${hr.length}杯・${fmtG(hrG)}g。少しゆっくり。`]);
   if(dly.vomit>0)A.push(['bad','体調に注意','きょうはもう飲まないで。水を少しずつ。何度も続く、意識がもうろうとする、呼びかけに反応が鈍いときは迷わず周りの人や救急に助けを。']);
   {const c=clearInfo(),wb=workBudget();
-   if(wb&&wb.left<0)A.unshift(['bad','もうこれ以上はダメ',`あしたの仕事は${fmtT(wb.w)}。いまのお酒が抜けるのは${dayLbl(c.at)} ${fmtT(c.at)}ごろの計算で、仕事に残ります。ここからは水だけに。`]);
+   if(wb&&wb.left<0)A.unshift(['bad','もうこれ以上はダメ',`いまのお酒が抜けるのは${dayLbl(c.at)} ${fmtT(c.at)}ごろの計算で、${dlTxt(wb)}までに抜けません。ここからは水だけに。`]);
    else if(!wb&&c.h>0){const six=new Date();six.setHours(30,0,0,0);if(c.at>six)A.push(['warn','翌朝まで残るかも',`計算上、抜けるのは${dayLbl(c.at)} ${fmtT(c.at)}ごろ。朝に運転の予定があるなら要注意。`])}}
   const rest7=[...Array(7)].map((_,i)=>daySumG(addDays(k,-(i+1)))).filter(g=>g===0).length;
   if(lvl<=1&&rest7===0)A.push(['warn','休肝日がありません','この7日間、毎日飲んでいます。週2日は休ませてあげて。']);
@@ -1073,6 +1076,7 @@ $('clearSample').onclick=()=>{st.entries=st.entries.filter(e=>!e.sample);st.shop
 $('float').onclick=()=>{const t=document.querySelector('nav.tabs [data-tab="today"]');if($('tab-today').hidden)t.click();window.scrollTo({top:0,behavior:'smooth'})};
 $('condSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;st.cond=b.dataset.c;save();renderToday();toast(`体調「${COND[st.cond][1]}」で計算し直しました`)};
 $('workSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;st.work.on=b.dataset.w==='on';save();renderToday()};
+$('marginSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;st.workMargin=+b.dataset.m;save();renderToday();toast(b.dataset.m==='0'?'仕事の開始時刻で判定します':`仕事の${b.dataset.m}時間前で判定します`)};
 $('workTime').onchange=()=>{if($('workTime').value){st.work.time=$('workTime').value;save();renderToday()}};
 setInterval(()=>{renderStatus()},60000);
 
@@ -1147,7 +1151,7 @@ function renderSheet(){
   const dr=shKind==='drink',d=dr?byId[shId]:fById[shId];
   $('shOrdered').hidden=!shEntry;
   if(shEntry){let t=`${hm(shEntry.ts)} ${d.name}を記録（+${dr?fmtG(shEntry.g)+'g':fmtK(shEntry.kcal)+'kcal'}）`;let ng=false;
-    if(dr&&shEntry.g>0){const c=clearInfo(),wb=workBudget();t+=`\nこの1杯で、抜けるのは${dayLbl(c.at)} ${fmtT(c.at)}ごろ`;if(wb&&wb.left<0){ng=true;t+=`。仕事（${fmtT(wb.w)}）に残る計算です`}}
+    if(dr&&shEntry.g>0){const c=clearInfo(),wb=workBudget();t+=`\nこの1杯で、抜けるのは${dayLbl(c.at)} ${fmtT(c.at)}ごろ`;if(wb&&wb.left<0){ng=true;t+=`。${dlTxt(wb)}までに抜けない計算です`}}
     $('shOrderedTxt').textContent=t;$('shOrdered').classList.toggle('ng',ng)}
   $('shName').textContent=d.name;$('shSpec').textContent=dr?specTxt(d,spec(d,shEntry&&shEntry.size)):`${d.note?d.note+'・':''}約${d.kcal}kcal`;
   const szOn=dr&&d.sizes;$('shSize').hidden=!szOn;
