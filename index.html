@@ -369,6 +369,8 @@ nav.tabs button[aria-selected="true"] svg{color:var(--amber)}
 
   <div class="card" id="clearCard">
     <div class="row between"><h2>抜けるまでの計算</h2><span class="sub" id="rateTxt"></span></div>
+    <div class="row between" style="margin-top:8px"><span class="sub">抜ける時刻の表示</span><div class="seg" id="clearSeg" style="min-width:180px"><button data-v="1">表示</button><button data-v="0">非表示</button></div></div>
+    <div class="sub" id="clearNote" style="margin-top:4px"></div>
     <div class="field" style="grid-template-columns:auto 110px 1fr;margin-top:8px"><label for="cW">体重</label><input type="number" id="cW" step="0.1" inputmode="decimal"><span class="sub">kg（分解の速さは体重で変わる）</span></div>
     <div class="sub" style="margin-top:8px">きょうの体調</div>
     <div class="seg" id="condSeg" style="margin-top:6px"><button data-c="bad">悪い</button><button data-c="mid">普通</button><button data-c="good">良い</button></div>
@@ -916,11 +918,15 @@ const fmtT=d=>`${pad(d.getHours())}:${pad(d.getMinutes())}`;
 const dayLbl=d=>{const t=new Date();t.setHours(0,0,0,0);const x=new Date(d);x.setHours(0,0,0,0);const diff=Math.round((x-t)/864e5);return diff===0?'きょう':diff===1?'あした':`${d.getMonth()+1}/${d.getDate()}`};
 function workBudget(){const w=workAt();if(!w)return null;const m=st.workMargin??1;const dl=new Date(w.getTime()-m*3600e3);const {rem,rate}=clearInfo();const hrs=(dl.getTime()-Date.now())/3600e3;return {w,dl,m,left:rate*hrs-rem}}
 const dlTxt=wb=>wb.m?`仕事（${fmtT(wb.w)}）の${wb.m}時間前の${fmtT(wb.dl)}`:`仕事の始まる${fmtT(wb.w)}`;
+function nextMorning(){const d=new Date();if(d.getHours()>=5)d.setDate(d.getDate()+1);d.setHours(6,0,0,0);return d}
+function clearPref(){st.clearView=st.clearView||{on:true,off:false};return !!st.clearView[st.work&&st.work.on?'on':'off']}
+function clearForced(){const c=clearInfo();if(c.h<=0)return '';const wb=workBudget();if(wb&&wb.left<0)return 'work';if(daySumG(todayK())>=st.limit*2)return 'much';if(!wb&&c.at>nextMorning())return 'morning';return ''}
+function clearVisible(){return clearPref()||!!clearForced()}
 function renderStatus(){
   const k=todayK(),g=daySumG(k),lv=lvLiver(g),c=clearInfo(),wb=workBudget(),tk=dayKcal(k),T=targetKcal();
   $('fLiver').innerHTML=liverSVG(lv);$('fG').textContent=fmtG(g)+'g';
   const ng=wb&&wb.left<0;
-  $('fGp').textContent=ng?'仕事前に抜けない！':(c.h>0?`${fmtT(c.at)}に抜ける`:`${Math.round(g/st.limit*100)}%`);
+  $('fGp').textContent=ng?'仕事前に抜けない！':(c.h>0&&clearVisible()?`${fmtT(c.at)}に抜ける`:`${Math.round(g/st.limit*100)}%`);
   $('fGp').classList.toggle('ng',!!ng);
   $('fSto').innerHTML=stoSVG(lvSto(tk,T));$('fK').textContent=fmtK(tk)+'kcal';$('fKp').textContent=Math.round(tk/T*100)+'%';
   updateFloat();
@@ -1022,11 +1028,15 @@ function renderToday(){
   if(document.activeElement!==$('cW'))$('cW').value=latestWeight().toFixed(1);
   document.querySelectorAll('#marginSeg button').forEach(x=>x.setAttribute('aria-pressed',+x.dataset.m===(st.workMargin??1)));
   $('workTime').value=st.work.time;$('workTime').disabled=!st.work.on;
+  {const pv=clearPref();document.querySelectorAll('#clearSeg button').forEach(x=>x.setAttribute('aria-pressed',(x.dataset.v==='1')===pv));
+   $('clearNote').textContent=(st.work.on?'あしたの仕事が「あり」の日の設定です。':'あしたの仕事が「なし」の日は、ふだんは非表示です。')+'非表示にしていても、飲みすぎたときは表示します。'}
   $('rateTxt').textContent=`分解の速さ 約${alcRate().toFixed(1)}g/時`;
-  {const c=clearInfo(),wb=workBudget();let h='';
+  {const c=clearInfo(),wb=workBudget(),fc=clearForced();let h='';
+   if(!clearVisible())h='<span class="sub">抜ける時刻は非表示にしています。</span>';else{
+   if(fc&&!clearPref())h+=`<span class="pill" style="background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn);font-weight:700;display:inline-block;margin-bottom:4px">${{work:'仕事前に抜けない計算なので表示しています',much:'目安の2倍を超えたので表示しています',morning:'翌朝まで残りそうなので表示しています'}[fc]}</span><br>`;
    h+=c.h>0?`いまのアルコールが抜けるのは <b class="num">${dayLbl(c.at)} ${fmtT(c.at)}ごろ</b>（あと約${c.h.toFixed(1)}時間）。`:'いま体内のアルコールはほぼゼロ。';
    if(wb){if(wb.left<0)h+=`<br><b style="color:var(--bad)">${dlTxt(wb)}までに抜けない計算です。きょうはもう飲まないで。</b>`;
-     else{const n=Math.floor(wb.left/gOf(350,5));h+=`<br>${dlTxt(wb)}までに抜けるには、ここから <b class="num">約${Math.floor(wb.left)}g</b> が上限（${n>0?`生中なら${n}杯分`:'生中1杯も入りません'}）。1日の目安とは別の、超えてはいけない線です。`}}
+     else{const n=Math.floor(wb.left/gOf(350,5));h+=`<br>${dlTxt(wb)}までに抜けるには、ここから <b class="num">約${Math.floor(wb.left)}g</b> が上限（${n>0?`生中なら${n}杯分`:'生中1杯も入りません'}）。1日の目安とは別の、超えてはいけない線です。`}}}
    $('budget').innerHTML=h;}
   // 警告
   const A=[],dly=daily(k);
@@ -1037,7 +1047,7 @@ function renderToday(){
   if(dly.vomit>0)A.push(['bad','体調に注意','きょうはもう飲まないで。水を少しずつ。何度も続く、意識がもうろうとする、呼びかけに反応が鈍いときは迷わず周りの人や救急に助けを。']);
   {const c=clearInfo(),wb=workBudget();
    if(wb&&wb.left<0)A.unshift(['bad','もうこれ以上はダメ',`いまのお酒が抜けるのは${dayLbl(c.at)} ${fmtT(c.at)}ごろの計算で、${dlTxt(wb)}までに抜けません。ここからは水だけに。`]);
-   else if(!wb&&c.h>0){const six=new Date();six.setHours(30,0,0,0);if(c.at>six)A.push(['warn','翌朝まで残るかも',`計算上、抜けるのは${dayLbl(c.at)} ${fmtT(c.at)}ごろ。朝に運転の予定があるなら要注意。`])}}
+   else if(!wb&&c.h>0){if(c.at>nextMorning())A.push(['warn','翌朝まで残るかも',`計算上、抜けるのは${dayLbl(c.at)} ${fmtT(c.at)}ごろ。朝に運転の予定があるなら要注意。`])}}
   const rest7=[...Array(7)].map((_,i)=>daySumG(addDays(k,-(i+1)))).filter(g=>g===0).length;
   if(lvl<=1&&rest7===0)A.push(['warn','休肝日がありません','この7日間、毎日飲んでいます。週2日は休ませてあげて。']);
   if(lvl===0)A.push(['ok','休肝日キープ中',`この7日間の休肝日：${rest7}日`]);
@@ -1132,6 +1142,7 @@ $('clearSample').onclick=()=>{st.entries=st.entries.filter(e=>!e.sample);st.shop
 // 分解ステータス（常時表示・消せる）
 $('float').onclick=()=>{const t=document.querySelector('nav.tabs [data-tab="today"]');if($('tab-today').hidden)t.click();window.scrollTo({top:0,behavior:'smooth'})};
 $('condSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;st.cond=b.dataset.c;save();renderToday();toast(`体調「${COND[st.cond][1]}」で計算し直しました`)};
+$('clearSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;clearPref();const v=b.dataset.v==='1';st.clearView[st.work.on?'on':'off']=v;save();renderToday();toast(v?'抜ける時刻を表示します':'抜ける時刻を非表示にしました（飲みすぎたら表示します）')};
 $('workSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;st.work.on=b.dataset.w==='on';save();renderToday()};
 $('marginSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;st.workMargin=+b.dataset.m;save();renderToday();toast(b.dataset.m==='0'?'仕事の開始時刻で判定します':`仕事の${b.dataset.m}時間前で判定します`)};
 $('workTime').onchange=()=>{if($('workTime').value){st.work.time=$('workTime').value;save();renderToday()}};
@@ -1212,7 +1223,7 @@ function renderSheet(){
   const dr=shKind==='drink',d=dr?byId[shId]:fById[shId];
   $('shOrdered').hidden=!shEntry;
   if(shEntry){let t=`${hm(shEntry.ts)} ${d.name}を記録（+${dr?fmtG(shEntry.g)+'g':fmtK(shEntry.kcal)+'kcal'}）`;let ng=false;
-    if(dr&&shEntry.g>0){const c=clearInfo(),wb=workBudget();t+=`\nこの1杯で、抜けるのは${dayLbl(c.at)} ${fmtT(c.at)}ごろ`;if(wb&&wb.left<0){ng=true;t+=`。${dlTxt(wb)}までに抜けない計算です`}}
+    if(dr&&shEntry.g>0&&clearVisible()){const c=clearInfo(),wb=workBudget();t+=`\nこの1杯で、抜けるのは${dayLbl(c.at)} ${fmtT(c.at)}ごろ`;if(wb&&wb.left<0){ng=true;t+=`。${dlTxt(wb)}までに抜けない計算です`}}
     $('shOrderedTxt').textContent=t;$('shOrdered').classList.toggle('ng',ng)}
   $('shName').textContent=d.name;$('shSpec').textContent=dr?specTxt(d,spec(d,shEntry&&shEntry.size)):`${d.note?d.note+'・':''}約${d.kcal}kcal`;
   const szOn=dr&&d.sizes;$('shSize').hidden=!szOn;
