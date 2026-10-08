@@ -356,6 +356,14 @@ button.tc-h{width:100%;background:none;border:none;padding:0;text-align:left;cur
 .np-ai{margin-top:10px;border:1.5px dashed var(--line);border-radius:12px;padding:10px}
 select{background:var(--surface2);border:1.5px solid var(--line);border-radius:10px;padding:6px 8px;font:inherit;font-size:13px;color:var(--ink)}
 details.card summary{cursor:pointer}
+.lv-st{display:flex;align-items:center;gap:8px;font-family:var(--display);font-weight:900;font-size:18px}
+.lv-st i{width:12px;height:12px;border-radius:50%;background:var(--line)}
+.lv-st.on i{background:var(--bad);animation:lvBlink 1.2s infinite}
+.lv-st span{margin-left:auto;font-size:20px}
+@keyframes lvBlink{50%{opacity:.25}}
+.lv-last{background:var(--surface2);border-radius:10px;padding:8px 10px;font-size:14px;line-height:1.6;margin-top:6px;min-height:48px}
+.lv-btns{display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-top:10px}
+.btn.lv-hit{background:var(--amber);color:var(--amber-ink);font-size:20px;padding:16px;font-family:var(--display)}
 /* 白書 */
 .hk-top{display:flex;gap:12px;align-items:center;margin-top:8px}
 .hk-top svg{width:84px;height:56px;flex:none}
@@ -1852,17 +1860,25 @@ function npGenres(s){const G=[];const R=[['失敗談',/失敗|やらかし|ミ�
 function fmtSec(t){if(t==null)return '';const h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=Math.floor(t%60);return (h?h+':':'')+pad(m)+':'+pad(s)}
 // アプリだけで自動仕分け（話のまとまり＋直後の反応で判定）
 function autoSplit(utts,meSp){
-  const hasSp=new Set(utts.map(u=>u.sp).filter(Boolean)).size>1;const runs=[];
-  if(hasSp){utts.forEach((u,i)=>{const last=runs[runs.length-1];if(last&&last.sp===u.sp&&(u.t==null||last.t1==null||u.t-last.t1<45)){last.x+=(/[。！？!?]$/.test(last.x)?'':'。')+u.x;last.end=i;last.t1=u.t}else runs.push({sp:u.sp,x:u.x,start:i,end:i,t0:u.t,t1:u.t})})}
-  else{for(let i=0;i<utts.length;i+=10){const ch=utts.slice(i,i+10);runs.push({sp:'',x:ch.map(u=>u.x).join('。'),start:i,end:Math.min(utts.length-1,i+9),t0:ch[0].t,t1:ch[ch.length-1].t})}}
+  const hasSp=new Set(utts.map(u=>u.sp).filter(Boolean)).size>1;const runs=[];const isMark=x=>/^［(ウケた|スベった)］$/.test(x);
+  if(hasSp){utts.forEach((u,i)=>{const last=runs[runs.length-1];
+    if(isMark(u.x)){if(last)last.mark=(last.mark||0)+(u.x.includes('ウケ')?1:-1);return}
+    if(last&&last.sp===u.sp&&(u.t==null||last.t1==null||u.t-last.t1<45)){last.x+=(/[。！？!?]$/.test(last.x)?'':'。')+u.x;last.end=i;last.t1=u.t}else runs.push({sp:u.sp,x:u.x,start:i,end:i,t0:u.t,t1:u.t,mark:0})})}
+  else{let cur=null;utts.forEach((u,i)=>{
+    if(isMark(u.x)){if(cur)cur.mark+=u.x.includes('ウケ')?1:-1;return}
+    const gap=cur&&u.t!=null&&cur.t1!=null?u.t-cur.t1:0;
+    if(!cur||gap>=20||cur.n>=14||cur.x.length>500){cur={sp:'',x:u.x,start:i,end:i,t0:u.t,t1:u.t,n:1,mark:0};runs.push(cur)}else{cur.x+=(/[。！？!?]$/.test(cur.x)?'':'。')+u.x;cur.end=i;cur.t1=u.t;cur.n++}})}
+  if(!hasSp){for(let i=runs.length-1;i>0;i--){const r=runs[i],pv=runs[i-1];if(r.x.length<40&&(r.t0==null||pv.t1==null||r.t0-pv.t1<90)){pv.x+='。'+r.x;pv.mark+=r.mark;pv.end=r.end;pv.t1=r.t1;runs.splice(i,1)}}}
   runs.forEach(r=>{r.x=r.x.replace(/^([^。！？!?]{0,7}[。！？!?])+/,'')});
-  const cands=runs.filter(r=>r.x.length>=(hasSp?70:160)&&(!meSp||r.sp===meSp)).map(r=>{
-    const win=[];for(let j=r.end+1;j<utts.length&&win.length<6;j++){const u=utts[j];if(u.x.length>=40)break;if(!hasSp||u.sp!==r.sp)win.push(u)}
-    const laugh=npLaugh(win.map(u=>u.x).join(' '))+npLaugh(r.x.slice(-60))*0.5;
-    const shortR=win.filter(u=>u.x.length<14).length*0.4,ex=(win.map(u=>u.x).join('').match(/[！!？?]/g)||[]).length*0.3;
-    const sc=laugh*1.6+shortR+ex;const grade=sc>=6?3:sc>=3?2:sc>=1.2?1:0;
+  const cands=runs.filter(r=>(r.x.length>=(hasSp?70:80)||r.mark!==0)&&(!meSp||!hasSp||r.sp===meSp)).map(r=>{
+    let win=[];for(let j=r.end+1;j<utts.length&&win.length<(hasSp?6:3);j++){const u=utts[j];if(isMark(u.x))continue;if(u.x.length>=40)break;if(!hasSp||u.sp!==r.sp)win.push(u)}
+    const wt=win.map(u=>u.x).join(' ');
+    const laugh=npLaugh(wt)+npLaugh(hasSp?r.x.slice(-60):r.x)*(hasSp?0.5:0.6);
+    const shortR=win.filter(u=>u.x.length<14).length*0.4,ex=(wt.match(/[！!？?]/g)||[]).length*0.3;
+    let sc=laugh*1.6+shortR+ex+(r.mark>0?r.mark*5:0);let grade=sc>=6?3:sc>=3?2:sc>=1.2?1:0;if(r.mark<0)grade=0;
     const first=((r.x.match(/[^。！？!?]{8,}/)||[r.x.slice(0,24)])[0]).replace(/^(この前さ|そういえば|でさ|あのさ|昔、?)[、,]?/,'');
-    return {id:npId(),title:first.slice(0,24),body:r.x.slice(0,1200),sp:r.sp,at:fmtSec(r.t0),grade,reason:`直後の反応：笑い・驚き ${Math.round(laugh)}回、あいづち ${Math.round(shortR/0.4)}回`,genre:npGenres(r.x),scene:[],len:npLen(r.x)}});
+    const reason=(r.mark>0?`その場で「ウケた！」${r.mark}回・`:r.mark<0?'その場で「スベった」・':'')+`反応：笑い・驚き ${Math.round(laugh)}回、あいづち ${Math.round(shortR/0.4)}回`;
+    return {id:npId(),title:first.slice(0,24),body:r.x.slice(0,1200),sp:r.sp,at:fmtSec(r.t0),grade,reason,genre:npGenres(r.x),scene:[],len:npLen(r.x)}});
   return cands.sort((a,b)=>b.grade-a.grade).slice(0,60)}
 function aiPrompt(text,meta){return `次は飲み会（約${meta.hours||'数'}時間）の文字起こしです。会話を「ひとつの話（エピソード）」ごとに区切って、聞いていた人の反応（笑い声、（笑）、「マジで？」「やばい」などのあいづち、話が盛り上がったか）から、ウケたかどうかを評価してください。${meta.me?`\n話し手のうち「${meta.me}」が私です。私が話したものを中心に、ほかの人の面白い話も入れてください。`:''}
 残す価値がありそうな話を最大30個まで選び、次のJSONだけを返してください（説明文は不要）。
@@ -1894,6 +1910,40 @@ function toldLine(it){const S=toldStat(it);return `通算${S.all}回・今日${S
 function markTold(id){const N=npState(),it=N.items.find(x=>x.id===id);if(!it)return;(it.told=it.told||[]).push({ts:Date.now(),who:N.who});save();
   const S=toldStat(it);toast(S.today>1?`今日${S.today}回目です（通算${S.all}回）`:`話した！ 通算${S.all}回目`)}
 function unmarkTold(id){const it=npState().items.find(x=>x.id===id);if(!it||!(it.told||[]).length)return;it.told.pop();save()}
+// ---- その場で聞き取り（iPhoneの中だけ・無料） ----
+const LIVE_KEY='spikei-live';let liveRec=null,liveInterim='',liveTimer=null,liveWake=null;
+let live=(()=>{try{return JSON.parse(localStorage.getItem(LIVE_KEY))||null}catch(e){return null}})()||{on:false,lines:[],t0:0,pausedAt:0,acc:0};
+live.on=false;
+function liveSave(){try{localStorage.setItem(LIVE_KEY,JSON.stringify(live))}catch(e){}}
+function liveSec(){return Math.round((live.acc+(live.on&&live.t0?Date.now()-live.t0:0))/1000)}
+async function liveWakeOn(){try{if('wakeLock' in navigator){liveWake=await navigator.wakeLock.request('screen')}}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&live.on)liveWakeOn()});
+function liveStart(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){toast('このブラウザは聞き取りに対応していません。ボイスメモを使ってください');return}
+  if(!liveRec){liveRec=new SR();liveRec.lang='ja-JP';liveRec.continuous=true;liveRec.interimResults=true;
+    liveRec.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i];if(r.isFinal){const x=r[0].transcript.trim();if(x){live.lines.push({t:liveSec(),x});liveSave()}liveInterim=''}else liveInterim=r[0].transcript}renderLiveBox()};
+    liveRec.onend=()=>{if(live.on)setTimeout(()=>{if(live.on)try{liveRec.start()}catch(_){}},250)};
+    liveRec.onerror=e=>{if(e.error==='not-allowed'||e.error==='service-not-allowed'){liveStop(true);toast('マイクと音声認識の許可が必要です')}}}
+  live.on=true;live.t0=Date.now();try{liveRec.start()}catch(_){}liveWakeOn();clearInterval(liveTimer);liveTimer=setInterval(renderLiveBox,1000);liveSave();renderLiveBox()}
+function liveStop(pause){if(live.on){live.acc+=Date.now()-live.t0;live.t0=0}live.on=false;try{liveRec&&liveRec.stop()}catch(_){}try{liveWake&&liveWake.release()}catch(_){}liveWake=null;clearInterval(liveTimer);liveSave();renderLiveBox()}
+function liveMark(hit){live.lines.push({t:liveSec(),x:hit?'［ウケた］':'［スベった］'});liveSave();try{navigator.vibrate&&navigator.vibrate(hit?[15,40,15]:30)}catch(_){}toast(hit?'ウケた！を記録':'スベった…を記録');renderLiveBox()}
+function liveText(){return live.lines.map(l=>`${fmtSec(l.t)}\n${l.x}`).join('\n')}
+function renderLiveBox(){const el=$('liveBox');if(!el)return;const n=live.lines.filter(l=>!/^［/.test(l.x)).length,hits=live.lines.filter(l=>l.x==='［ウケた］').length;
+  const last=live.lines.filter(l=>!/^［/.test(l.x)).slice(-3).map(l=>npEsc(l.x)).join('<br>');
+  el.innerHTML=`<div class="lv-st${live.on?' on':''}"><i></i>${live.on?'聞き取り中':(live.lines.length?'一時停止中':'待機中')}<span class="num">${fmtSec(liveSec())||'00:00'}</span></div>
+   <div class="sub num">発言${n}件・ウケた！${hits}回</div>
+   <div class="lv-last">${last||'<span class="sub">ここに聞き取った言葉が出ます</span>'}${liveInterim?`<br><span class="sub">${npEsc(liveInterim)}…</span>`:''}</div>
+   ${live.on||live.lines.length?`<div class="lv-btns"><button class="btn lv-hit" id="lvHit">ウケた！</button><button class="btn ghost" id="lvMiss">スベった…</button></div>`:''}
+   <div class="row" style="gap:8px;margin-top:8px">${live.on?'<button class="btn ghost" id="lvPause" style="flex:1">一時停止</button>':`<button class="btn" id="lvStart" style="flex:1">${live.lines.length?'再開':'聞き取りをはじめる'}</button>`}${live.lines.length?'<button class="btn ghost" id="lvDone" style="flex:1">終わって仕分けへ</button>':''}</div>
+   ${!live.on&&live.lines.length?'<button class="btn ghost" id="lvClear" style="margin-top:8px;width:100%">聞き取った内容を消す</button>':''}`}
+// ---- Geminiで仕分け（自分の無料キー） ----
+const GKEY='spikei-gkey';const gGet=()=>{try{return localStorage.getItem(GKEY)||''}catch(e){return ''}};
+async function geminiModel(key){try{const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=${encodeURIComponent(key)}`);const j=await r.json();
+  const L=(j.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes('generateContent')&&/flash/.test(m.name)&&!/lite|image|tts|live|audio|embed|thinking|exp|preview|learnlm/.test(m.name)).map(m=>m.name.replace('models/',''));
+  const v=n=>{const m=n.match(/(\d+(?:\.\d+)?)/);return m?parseFloat(m[1]):0};L.sort((a,b)=>v(b)-v(a));return L[0]||'gemini-flash-latest'}catch(e){return 'gemini-flash-latest'}}
+async function geminiSplit(text,meta){const key=gGet();if(!key)throw new Error('nokey');const model=await geminiModel(key);
+  const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:aiPrompt(text,meta)}]}],generationConfig:{responseMimeType:'application/json',temperature:0.3}})});
+  const j=await r.json();if(!r.ok)throw new Error((j.error&&j.error.message)||('HTTP '+r.status));
+  const t=(((j.candidates||[])[0]||{}).content||{}).parts;if(!t)throw new Error('空の返事でした');return {cands:importAI(t.map(p=>p.text||'').join('')),model}}
 // --- 画面 ---
 let npTab='rec',npQ='',npF={scene:null,who:null,genre:null,star:0},npSort='rec',npOpen=null,npEditId=null,npImp={text:'',name:'',me:'',mode:null};
 function openNeta(tab){npTab=tab||npTab;$('netaPanel').hidden=false;document.body.style.overflow='hidden';renderNeta()}
@@ -1955,20 +2005,30 @@ function renderNeta(){const N=npState(),B=$('npBody');
       <div class="meta">${(c.genre||[]).map(g=>`<span class="pill">${g}</span>`).join('')}</div>
       <div class="np-acts"><button class="btn" data-keep="${c.id}">残す</button><button class="btn ghost" data-drop="${c.id}">いらない</button></div></div>`).join('')}</div>`
      :`<div class="card"><div class="sub">仕分けを待っている話はありません。「読み込み」から録音の文字起こしを入れてください。</div></div>`;return}
-  if(npTab==='imp'){
-    B.innerHTML=`<div class="card"><h2>録音の文字起こしを読み込む</h2>
-      <div class="sub" style="margin-top:4px">AIボイスレコーダーなどで文字起こししたテキストを貼るか、ファイル（.txt / .srt / .vtt / .md）を選んでください。話者名や時刻が入っていると、仕分けの精度が上がります。</div>
-      <textarea id="npText" rows="8" placeholder="ここに文字起こしを貼り付け" style="margin-top:8px">${npEsc(npImp.text)}</textarea>
+  if(npTab==='imp'){const hasKey=!!gGet();
+    B.innerHTML=`<div class="card"><h2>① iPhoneでその場で聞き取る</h2>
+      <div class="sub" style="margin-top:4px">画面をつけたままテーブルに置いておくだけ。iPhoneの音声認識で文字にします（追加料金なし）。ウケた瞬間に「ウケた！」を押すと、判定がぐっと正確になります。長時間なら充電しながら。</div>
+      <div id="liveBox" style="margin-top:10px"></div></div>
+     <div class="card"><h2>② 録音の文字起こしを入れる</h2>
+      <div class="sub" style="margin-top:4px">AIボイスレコーダーの文字起こし、またはiPhoneの「ボイスメモ」の文字起こし（録音の「…」→「文字起こしをコピー」）を貼るか、ファイル（.txt / .srt / .vtt / .md）を選んでください。話者名と時刻が入っていると精度が上がります。</div>
+      <textarea id="npText" rows="7" placeholder="ここに文字起こしを貼り付け" style="margin-top:8px">${npEsc(npImp.text)}</textarea>
       <div class="row" style="margin-top:8px"><label class="btn ghost" for="npFile">ファイルを選ぶ</label><input type="file" id="npFile" accept=".txt,.srt,.vtt,.md,.csv,text/plain"><span class="sub num" id="npInfo"></span></div>
-      <div class="sub" style="margin-top:10px">自分の話者名（わかれば。例：話者2、Speaker 1、とも）</div><input type="text" id="npMe" value="${npEsc(npImp.me)}" placeholder="空なら全員の話から探す">
-      <div class="sub" style="margin-top:10px">今日の面子</div><div class="chips" id="npWho2" style="margin-top:6px">${chipsHTML(NP_WHO,N.who,'data-w')}</div>
-      <div class="sub" style="margin-top:12px">どうやって仕分ける？</div>
-      <div class="stack" style="margin-top:6px">
-       <button class="btn" id="npAuto">アプリで自動仕分け（無料・すぐ）</button>
-       <button class="btn ghost" id="npAI">AIで仕分け（Claudeなどに貼る・高精度）</button></div>
+      <div class="sub" style="margin-top:10px">自分の話者名（わかれば。例：話者2、Speaker 1）</div><input type="text" id="npMe" value="${npEsc(npImp.me)}" placeholder="空なら全員の話から探す">
+      <div class="sub" style="margin-top:10px">今日の面子</div><div class="chips" id="npWho2" style="margin-top:6px">${chipsHTML(NP_WHO,N.who,'data-w')}</div></div>
+     <div class="card" id="npSplitCard"><h2>③ 仕分ける</h2>
+      <div class="stack" style="margin-top:8px">
+       <button class="btn" id="npAuto">iPhoneの中で自動仕分け（無料・すぐ）</button>
+       <button class="btn ghost" id="npGem">${hasKey?'Geminiで仕分け（無料枠）':'Geminiで仕分け（はじめに設定）'}</button>
+       <button class="btn ghost" id="npAI">AIアプリに貼って仕分け（Claude・ChatGPTなど）</button></div>
       ${npImp.mode==='ai'?`<div class="np-ai"><ol class="np-flow"><li>指示文と文字起こしをコピーしました。</li><li>ClaudeやChatGPTのアプリに貼って送信。</li><li>返ってきた答え（{ "neta": … }）をまるごとコピーして、下に貼る。</li></ol>
         <textarea id="npAIres" rows="6" placeholder="AIの返事を貼り付け"></textarea><button class="btn" id="npAIimp" style="margin-top:8px;width:100%">仕分けに入れる</button></div>`:''}
-      <div class="sub" style="margin-top:12px">録音は、いっしょにいる人に一言伝えてから。文字起こしもネタ帳も、この端末の中だけに保存されます（AI仕分けは、自分でコピーして貼ったときだけ外に出ます）。</div></div>`;
+      <details class="np-ai" id="gemSet" ${npImp.mode==='gem'?'open':''}><summary><b>Geminiとつなぐ（自分の無料キー）</b>${hasKey?' <span class="pill">設定済み</span>':''}</summary>
+       <ol class="np-flow"><li>Google AI Studio（aistudio.google.com）にGoogleアカウントで入る。</li><li>「Get API key」→「APIキーを作成」。</li><li>できたキーを下に貼って保存。</li></ol>
+       <div class="sub" style="margin-top:6px">お支払い情報を登録しなければ無料枠だけで動き、料金はかかりません。1回の飲み会は1回の送信で仕分けます。<b>ただし無料枠では、送った内容がGoogleのサービス改善に使われることがあります。</b>友達の会話が入るので、気になるときは「iPhoneの中で自動」を使ってください。キーはこの端末にだけ保存し、バックアップにも入れません。</div>
+       <input type="text" id="gemKey" placeholder="APIキーを貼り付け" value="" style="margin-top:8px" autocomplete="off">
+       <div class="row" style="margin-top:8px;gap:8px"><button class="btn" id="gemSave" style="flex:1">保存</button>${hasKey?'<button class="btn ghost" id="gemDel">キーを消す</button>':''}</div></details>
+      <div class="sub" style="margin-top:12px">録音は、いっしょにいる人に一言伝えてから。文字起こしもネタ帳も、この端末の中だけに保存されます（Geminiやほかのアプリで仕分けたときだけ、その文字起こしが外に出ます）。</div></div>`;
+    renderLiveBox();
     const u=npImp.text?parseTranscript(npImp.text):[];$('npInfo').textContent=npImp.text?`${npImp.text.length.toLocaleString()}文字・発言${u.length}件`:'';return}
 }
 function npCollect(sel){return [...document.querySelectorAll(sel+' [aria-pressed="true"]')].map(b=>b.dataset.v)}
@@ -2001,6 +2061,19 @@ $('npBody').addEventListener('click',async e=>{const N=npState(),t=e.target;let 
   if(b=t.closest('[data-drop]')){N.inbox=N.inbox.filter(x=>x.id!==b.dataset.drop);save();renderNeta();return}
   if(t.closest('#npKeepGood')){const keep=N.inbox.filter(c=>c.grade>=2);keep.forEach(c=>N.items.unshift(netaFromCand(c)));N.inbox=[];save();renderNeta();toast(`${keep.length}本をネタ帳に残しました`);return}
   if(t.closest('#npDropAll')){if(t.dataset.arm!=='1'){t.dataset.arm='1';t.textContent='本当に捨てる';return}N.inbox=[];save();renderNeta();return}
+  if(t.closest('#lvStart')){liveStart();return}
+  if(t.closest('#lvPause')){liveStop(true);return}
+  if(t.closest('#lvHit')){liveMark(true);return}
+  if(t.closest('#lvMiss')){liveMark(false);return}
+  if(t.closest('#lvDone')){liveStop(true);npImp.text=liveText();npImp.me='';renderNeta();setTimeout(()=>{const c=$('npSplitCard');c&&c.scrollIntoView({behavior:'smooth',block:'start'})},50);toast('聞き取った内容を②に入れました。③で仕分けてください');return}
+  if(b=t.closest('#lvClear')){if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='本当に消す';return}live={on:false,lines:[],t0:0,acc:0};liveSave();renderLiveBox();return}
+  if(t.closest('#gemSave')){const k=($('gemKey').value||'').trim();if(!k){toast('キーを貼ってください');return}try{localStorage.setItem(GKEY,k)}catch(_){}npImp.mode=null;renderNeta();toast('Geminiのキーを保存しました');return}
+  if(t.closest('#gemDel')){try{localStorage.removeItem(GKEY)}catch(_){}renderNeta();toast('キーを消しました');return}
+  if(b=t.closest('#npGem')){if(!gGet()){npImp.mode='gem';renderNeta();return}if(!npImp.text.trim()){toast('文字起こしを入れてください');return}
+    const u=parseTranscript(npImp.text),ts=u.map(x=>x.t).filter(x=>x!=null),hrs=ts.length?Math.max(1,Math.round((ts[ts.length-1]-ts[0])/3600)):null;
+    b.disabled=true;b.textContent='Geminiが仕分け中…（数十秒）';
+    try{const {cands,model}=await geminiSplit(npImp.text,{me:(npImp.me||'').trim(),hours:hrs});cands.forEach(c=>{if(!c.who.length)c.who=[N.who];c.src=todayK()});N.inbox=cands.concat(N.inbox);npImp={text:'',name:'',me:npImp.me,mode:null};save();npTab='inbox';renderNeta();toast(`${cands.length}本を仕分けに入れました（${model}）`)}
+    catch(err){b.disabled=false;b.textContent='Geminiで仕分け（無料枠）';const m=String(err.message||err);toast(/quota|429|RESOURCE_EXHAUSTED/i.test(m)?'無料枠の上限です。時間をおくか「iPhoneの中で自動」で':/API key|401|403|PERMISSION/i.test(m)?'キーが正しくないようです':'うまくいきませんでした：'+m.slice(0,40))}return}
   if(t.closest('#npAuto')){const u=parseTranscript(npImp.text);if(u.length<5){toast('文字起こしを貼ってください');return}
     const C=autoSplit(u,(npImp.me||'').trim());C.forEach(c=>{if(!c.who)c.who=[N.who];c.src=todayK()});N.inbox=C.concat(N.inbox);npImp.text='';save();npTab='inbox';renderNeta();toast(C.length?`${C.length}本の話を見つけました`:'話のまとまりが見つかりませんでした');return}
   if(t.closest('#npAI')){if(!npImp.text.trim()){toast('文字起こしを貼ってください');return}
@@ -2011,16 +2084,17 @@ $('npBody').addEventListener('click',async e=>{const N=npState(),t=e.target;let 
 });
 function netaFromCand(c){return {id:npId(),title:c.title,body:c.body,grade:c.grade,scene:c.scene&&c.scene.length?c.scene:(c.len==='短'?['start','end']:c.len==='長'?['deep']:['mid']),who:c.who||[],genre:c.genre||[],len:c.len||npLen(c.body),told:[],created:Date.now(),src:c.src||null}}
 // きょう画面の小さなカードと、あそぶタブの入口
-function renderNetaToday(){const N=npState(),c=$('netaToday');if(!c)return;const k=todayK(),on=N.items.length&&dayAll(k).length;c.hidden=!on;if(!on)return;
+function renderNetaToday(){const N=npState(),c=$('netaToday');if(!c)return;const k=todayK(),on=(N.items.length&&dayAll(k).length)||live.on;c.hidden=!on;if(!on)return;
+  const lv=live.on?`<div class="row" style="gap:8px;margin-bottom:8px"><div class="lv-st on" style="font-size:15px;flex:1"><i></i>聞き取り中</div><button class="btn lv-hit" data-lvhit="1" style="font-size:16px;padding:10px 18px">ウケた！</button></div>`:'';
   const {ph}=netaPhase(),R=netaRecs(3);
-  $('netaTodayBody').innerHTML=`<div class="sub">いまは「${NP_PHASE[ph].l}」。${NP_PHASE[ph].d.split('。')[0]}。</div><div class="stack" style="margin-top:8px">${R.map(r=>{const S=toldStat(r.it);return `<div class="np-mini"><button class="np-title" data-nopen="1">${npEsc(r.it.title)}</button>${gradeStars(r.it.grade||0)}<span class="np-sub num">${S.today?`今日${S.today}回済`:`通算${S.all}回`}</span><button class="btn np-told" data-ntold="${r.it.id}">話した</button></div>`}).join('')}</div>
+  $('netaTodayBody').innerHTML=lv+`<div class="sub">いまは「${NP_PHASE[ph].l}」。${NP_PHASE[ph].d.split('。')[0]}。</div><div class="stack" style="margin-top:8px">${R.map(r=>{const S=toldStat(r.it);return `<div class="np-mini"><button class="np-title" data-nopen="1">${npEsc(r.it.title)}</button>${gradeStars(r.it.grade||0)}<span class="np-sub num">${S.today?`今日${S.today}回済`:`通算${S.all}回`}</span><button class="btn np-told" data-ntold="${r.it.id}">話した</button></div>`}).join('')}</div>
    <button class="btn ghost" data-nopen="1" style="margin-top:8px;width:100%">ネタ帳をひらく</button>`}
 function renderNetaCard(){const N=npState(),n=N.items.length,tToday=N.items.filter(it=>toldStat(it).today).length;
   $('npCardBody').innerHTML=`<div class="sub" style="margin-top:4px">飲み会の録音（文字起こし）から、ウケた話を拾ってネタ帳にします。お酒の進み具合と時間で、いま出すといい話を並べます。</div>
    <div class="row" style="gap:16px;margin-top:8px"><span class="num"><b style="font-family:var(--display);font-size:22px">${n}</b> <span class="sub">本のネタ</span></span><span class="num"><b style="font-family:var(--display);font-size:22px">${N.inbox.length}</b> <span class="sub">本が仕分け待ち</span></span><span class="num"><b style="font-family:var(--display);font-size:22px">${tToday}</b> <span class="sub">本 今日話した</span></span></div>
    <div class="row" style="margin-top:10px;gap:8px"><button class="btn" data-np="rec" style="flex:1">いまのおすすめ</button><button class="btn ghost" data-np="book" style="flex:1">ネタ帳</button><button class="btn ghost" data-np="imp" style="flex:1">読み込み</button></div>`}
 $('npCardBody').onclick=e=>{const b=e.target.closest('[data-np]');if(b)openNeta(b.dataset.np)};
-$('netaTodayBody').onclick=e=>{let b;if(b=e.target.closest('[data-ntold]')){markTold(b.dataset.ntold);renderNetaToday();return}if(e.target.closest('[data-nopen]'))openNeta('rec')};
+$('netaTodayBody').onclick=e=>{let b;if(e.target.closest('[data-lvhit]')){liveMark(true);return}if(b=e.target.closest('[data-ntold]')){markTold(b.dataset.ntold);renderNetaToday();return}if(e.target.closest('[data-nopen]'))openNeta('rec')};
 
 // ---------- タブ ----------
 document.querySelector('nav.tabs').onclick=e=>{const b=e.target.closest('[data-tab]');if(!b)return;
