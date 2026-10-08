@@ -1,0 +1,1383 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="お酒を頼んだ時にタップして、豆知識を読みながら飲める記録アプリ。純アルコール量・カロリー・抜けるまでの時間を計算します。">
+<meta name="theme-color" content="#26357a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="スピ系">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>html{-webkit-text-size-adjust:100%}body{margin:0}:root{padding-top:env(safe-area-inset-top,0px)}img{max-width:100%}</style>
+<title>スピ系チェッカー</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+/* 居酒屋の藍のれん × ビールの琥珀。スマホ1画面のアプリ、下に5タブ、主役キャラは追従 */
+:root{
+  --bg:#eef1f6; --surface:#ffffff; --surface2:#f5f7fb; --ink:#1b2340; --muted:#5d6683; --line:#d6dbe7;
+  --ai:#26357a; --ai-ink:#ffffff; --ai-soft:#26357a; --amber:#e0a020; --amber-ink:#4a3200;
+  --ok:#2f8a55; --warn:#b97c06; --bad:#c2453a; --shade:rgba(15,19,40,.45);
+  --display:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Noto Sans JP",sans-serif;
+  --body:"Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1328; --surface:#1a2040; --surface2:#141a36; --ink:#e9ecf7; --muted:#9aa3c4; --line:#2d3560;
+  --ai:#2b3a8c; --ai-ink:#ffffff; --ai-soft:#9fb0ff; --amber:#f2b84b; --amber-ink:#2a1c00;
+  --ok:#5cc488; --warn:#e8b24a; --bad:#f07a6c; --shade:rgba(0,0,0,.6); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1328; --surface:#1a2040; --surface2:#141a36; --ink:#e9ecf7; --muted:#9aa3c4; --line:#2d3560;
+  --ai:#2b3a8c; --ai-ink:#ffffff; --ai-soft:#9fb0ff; --amber:#f2b84b; --amber-ink:#2a1c00;
+  --ok:#5cc488; --warn:#e8b24a; --bad:#f07a6c; --shade:rgba(0,0,0,.6); color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.6;-webkit-tap-highlight-color:transparent}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+input[type=text],input[type=number]{background:var(--surface2);border:1.5px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0;width:100%}
+:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+
+header.noren{background:var(--ai);color:var(--ai-ink);padding:14px 16px 18px;position:relative}
+header.noren::after{content:"";position:absolute;left:0;right:0;bottom:-8px;height:8px;
+  background:linear-gradient(90deg,var(--ai) 0 24%,transparent 24% 25%,var(--ai) 25% 49%,transparent 49% 50%,var(--ai) 50% 74%,transparent 74% 75%,var(--ai) 75%)}
+.noren-in{max-width:480px;margin:0 auto;display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.noren h1{font-family:var(--display);font-weight:900;font-size:22px;margin:0;letter-spacing:.04em}
+.noren .date{font-size:13px;opacity:.85}
+
+main{max-width:480px;margin:0 auto;padding-inline:16px;padding-block:22px 110px;display:flex;flex-direction:column;gap:16px}
+section.tab{display:flex;flex-direction:column;gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+h2{font-family:var(--display);font-size:17px;margin:0;font-weight:700}
+.sub{color:var(--muted);font-size:13px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.between{justify-content:space-between}
+.stack{display:flex;flex-direction:column;gap:8px}
+
+.sample{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--surface2);border:1px dashed var(--line);border-radius:10px;padding:8px 12px;font-size:13px;color:var(--muted)}
+.sample button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 10px;font-size:12px}
+
+.seg{display:flex;border:1.5px solid var(--line);border-radius:12px;overflow:hidden}
+.seg button{flex:1;border:none;background:var(--surface);padding:9px 4px;font-weight:700;font-size:13.5px;line-height:1.3}
+.seg button + button{border-left:1.5px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--ai);color:var(--ai-ink)}
+
+/* 主役キャラ */
+.hero{display:grid;grid-template-columns:120px 1fr;gap:14px;align-items:center}
+.hero svg{width:120px;height:auto;display:block;overflow:visible}
+.hero .bounce{animation:boing .5s ease}
+@keyframes boing{30%{transform:scale(1.12,.9)}60%{transform:scale(.95,1.06)}100%{transform:none}}
+.who{font-family:var(--display);font-weight:700;font-size:13px;color:var(--muted)}
+.total{font-family:var(--display);font-weight:900;font-size:40px;line-height:1.05;letter-spacing:-.01em}
+.total small{font-size:15px;font-weight:700;margin-left:2px}
+.say{font-size:14px;font-weight:500;margin-top:6px}
+.lv0 .total{color:var(--ok)} .lv1 .total{color:var(--ink)} .lv2 .total{color:var(--warn)} .lv3 .total,.lv4 .total{color:var(--bad)}
+.gauge{grid-column:1/-1;margin-top:4px}
+.bar{position:relative;height:12px;border-radius:99px;background:var(--surface2);border:1px solid var(--line);overflow:hidden}
+.bar i{position:absolute;inset:0 auto 0 0;background:var(--amber);border-radius:99px;transition:width .4s ease}
+.lv2 .bar i{background:var(--warn)} .lv3 .bar i,.lv4 .bar i{background:var(--bad)}
+.ticks{position:relative;height:18px;font-size:11px;color:var(--muted)}
+.ticks span{position:absolute;transform:translateX(-50%);top:2px;white-space:nowrap}
+.ticks span::before{content:"";position:absolute;left:50%;top:-16px;height:14px;border-left:1.5px dashed var(--muted)}
+.meta{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap}
+.pill{font-size:12px;border:1px solid var(--line);background:var(--surface2);border-radius:99px;padding:2px 10px}
+
+/* 追従キャラ */
+.float{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);right:10px;z-index:8;display:flex;gap:8px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:4px 12px 4px 4px;box-shadow:0 6px 18px rgba(0,0,0,.2);transition:transform .25s,opacity .25s;max-width:calc(100% - 20px)}
+.float.off{opacity:0;transform:translateY(-14px);pointer-events:none}
+.float .m{display:flex;align-items:center;gap:3px;min-width:0}
+.float svg{width:40px;height:29px;flex:none;overflow:visible}
+.float b{font-family:var(--display);font-size:13px;line-height:1.15;display:block;white-space:nowrap}
+.float small{font-size:10.5px;color:var(--muted);display:block;line-height:1.2;white-space:nowrap}
+.float small.ng{color:var(--bad);font-weight:700}
+.sb-show{position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);right:10px;z-index:7;width:46px;height:40px;border-radius:99px;border:1px solid var(--line);background:var(--surface);box-shadow:0 4px 14px rgba(0,0,0,.15);padding:4px}
+.sb-show svg{width:100%;height:100%}
+.time{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin-top:10px}
+.time input[type=time]{font-family:var(--display);font-size:20px;font-weight:700;background:var(--surface2);border:1.5px solid var(--line);border-radius:10px;padding:6px 10px;min-width:0;width:100%}
+.budget{margin-top:10px;font-size:14px;line-height:1.7}
+
+.alert{border-radius:12px;padding:10px 14px;font-size:14px;display:flex;flex-direction:column;gap:2px;border:1px solid}
+.alert b{font-family:var(--display)}
+.alert.warn{background:color-mix(in srgb,var(--warn) 12%,var(--surface));border-color:color-mix(in srgb,var(--warn) 45%,transparent)}
+.alert.bad{background:color-mix(in srgb,var(--bad) 12%,var(--surface));border-color:color-mix(in srgb,var(--bad) 45%,transparent)}
+.alert.ok{background:color-mix(in srgb,var(--ok) 10%,var(--surface));border-color:color-mix(in srgb,var(--ok) 40%,transparent)}
+
+.stamps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.stamp{border:1.5px solid var(--line);background:var(--surface2);border-radius:12px;padding:10px 4px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px;transition:transform .08s}
+.stamp:active{transform:scale(.94)}
+.stamp.pop{animation:pop .35s ease}
+@keyframes pop{40%{transform:scale(1.08);border-color:var(--amber)}}
+.stamp .ic{width:30px;height:30px}
+.stamp .nm{font-weight:700;font-size:13.5px;line-height:1.2}
+.stamp .sp{font-size:10.5px;color:var(--muted);line-height:1.2}
+
+.okawari{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.ok-chip{display:flex;align-items:center;gap:8px;border:none;background:var(--amber);color:var(--amber-ink);border-radius:99px;padding:8px 8px 8px 14px;font-weight:700;font-size:14px}
+.ok-chip span{background:rgba(255,255,255,.55);border-radius:99px;padding:0 9px;font-family:var(--display);font-weight:900}
+
+.tool{border:1.5px solid var(--line);background:var(--surface);border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;font-weight:700;font-size:14px;text-align:left;width:100%}
+.tool svg{width:26px;height:26px;flex:none;color:var(--ai-soft)}
+.tool .sub{font-weight:400;font-size:11.5px;display:block}
+input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+
+.fuzzy{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.fz{border:1.5px dashed var(--line);background:transparent;border-radius:12px;padding:10px 4px;font-size:13px;font-weight:700;display:flex;flex-direction:column;align-items:center}
+.fz span{font-weight:400;font-size:11px;color:var(--muted)}
+.custom{display:grid;grid-template-columns:1fr 90px auto;gap:8px;margin-top:10px}
+.btn{border:none;background:var(--ai);color:var(--ai-ink);border-radius:10px;padding:8px 14px;font-weight:700}
+.btn.ghost{background:var(--surface2);color:var(--ink);border:1.5px solid var(--line)}
+
+.photo-res{display:grid;grid-template-columns:96px 1fr;gap:12px;align-items:start;margin-top:12px}
+.photo-res img{width:96px;height:96px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+.cands{display:flex;flex-direction:column;gap:6px}
+.cand{display:flex;justify-content:space-between;align-items:center;border:1.5px solid var(--line);background:var(--surface2);border-radius:10px;padding:8px 10px;font-size:13.5px;font-weight:700}
+.cand em{font-style:normal;font-size:12px;color:var(--muted);font-weight:500}
+.cand:first-child{border-color:var(--amber)}
+
+/* お店 */
+.shopnow{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.shopnow b{font-family:var(--display);font-size:17px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips.scroll{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.chip{flex:none;border:1.5px solid var(--line);background:var(--surface);border-radius:99px;padding:5px 12px;font-size:13.5px;font-weight:700}
+.chip[aria-pressed="true"]{background:var(--ai);color:var(--ai-ink);border-color:var(--ai)}
+.chip[aria-pressed="true"] .sub{color:inherit;opacity:.8}
+
+/* 体調メモ（折りたたみ） */
+.memo{padding:0}
+.memo summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:12px 16px;font-weight:700;font-size:14px;color:var(--muted)}
+.memo summary::-webkit-details-marker{display:none}
+.memo summary::after{content:"▸";margin-left:8px;transition:transform .2s}
+.memo[open] summary::after{transform:rotate(90deg)}
+.memo summary span:first-child{margin-right:auto}
+.memo .counters,.memo .hint{margin-inline:16px}
+.memo .hint{margin-bottom:14px}
+
+.counters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+.ctr{border:1.5px solid var(--line);border-radius:12px;padding:8px 10px;display:grid;grid-template-columns:1fr auto;align-items:center;gap:4px;background:var(--surface2)}
+.ctr .lbl{font-weight:700;font-size:13.5px}
+.ctr .n{font-family:var(--display);font-weight:900;font-size:22px;line-height:1}
+.ctr .bt{grid-column:1/-1;display:grid;grid-template-columns:1fr 2fr;gap:6px}
+.ctr .bt button{border:1.5px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 0;font-weight:700}
+.ctr .bt button.plus{background:var(--ai);color:var(--ai-ink);border-color:var(--ai)}
+.hint{font-size:13px;color:var(--muted);margin-top:10px;line-height:1.6}
+
+.neta{font-size:14.5px;line-height:1.75}
+.neta-src{font-size:12px;color:var(--muted);margin-top:6px}
+
+.log{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column}
+.log li{display:grid;grid-template-columns:44px 22px 1fr auto 30px;gap:6px;align-items:center;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+.log li:first-child{border-top:none}
+.log .t{color:var(--muted);font-size:13px}
+.log .k{font-size:11px;font-weight:700;border-radius:6px;text-align:center;line-height:20px}
+.log .k.d{background:color-mix(in srgb,var(--amber) 30%,var(--surface));}
+.log .k.f{background:color-mix(in srgb,var(--ok) 25%,var(--surface));}
+.log .nmb{border:none;background:none;padding:0;text-align:left;font-weight:500;min-width:0}
+.log .g{font-weight:700}
+.log .x{border:none;background:transparent;color:var(--muted);font-size:20px;line-height:1;width:30px;height:30px;border-radius:8px}
+.tag{display:inline-block;font-size:10.5px;border:1px solid var(--line);border-radius:6px;padding:0 5px;margin-left:6px;color:var(--muted);vertical-align:1px}
+
+/* カレンダー */
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.stat .k{font-size:12px;color:var(--muted)}
+.stat .v{font-family:var(--display);font-weight:900;font-size:24px;line-height:1.2}
+.stat .v small{font-size:13px;font-weight:700}
+.calhead{display:flex;align-items:center;justify-content:space-between}
+.calhead button{border:1px solid var(--line);background:var(--surface2);border-radius:10px;width:40px;height:36px;font-size:18px}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:12px}
+.cal .dow{font-size:11px;text-align:center;color:var(--muted)}
+.cal .dow.sun{color:var(--bad)} .cal .dow.sat{color:var(--ai-soft)}
+.day{aspect-ratio:1/1;max-width:100%;border-radius:9px;border:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;line-height:1.1;padding:0}
+.day .d{font-weight:700}
+.day .gg{font-size:10px;opacity:.85}
+.day.l1{background:color-mix(in srgb,var(--amber) 22%,var(--surface))}
+.day.l2{background:color-mix(in srgb,var(--amber) 48%,var(--surface))}
+.day.l3{background:color-mix(in srgb,var(--warn) 70%,var(--surface))}
+.day.l4{background:color-mix(in srgb,var(--bad) 72%,var(--surface));color:#fff}
+.day.rest .gg{color:var(--ok);font-weight:700;opacity:1}
+.day.future{opacity:.35}
+.day.empty{border:none;background:transparent}
+.day.today{outline:2px solid var(--ai-soft);outline-offset:1px}
+.day.sel{box-shadow:inset 0 0 0 2px var(--ink)}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-top:10px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid var(--line);vertical-align:-2px;margin-right:4px}
+table.list{width:100%;border-collapse:collapse;font-size:13.5px}
+table.list td,table.list th{padding:7px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+table.list th{font-size:12px;color:var(--muted);font-weight:500}
+table.list td.r,table.list th.r{text-align:right;white-space:nowrap}
+
+/* ペアリング */
+.pairs{display:flex;flex-direction:column;margin-top:10px}
+.pair{display:grid;grid-template-columns:1fr;gap:2px;padding:10px 0;border-top:1px solid var(--line)}
+.pair:first-child{border-top:none}
+.pair .pl{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-weight:700}
+.pair .x{color:var(--muted);font-weight:400}
+.pair .dr{border:none;background:color-mix(in srgb,var(--amber) 18%,var(--surface));border-radius:8px;padding:1px 9px;font-weight:700;font-size:14px}
+.pair .why{font-size:13px;color:var(--muted)}
+.pair.hit .dr{background:var(--amber);color:var(--amber-ink)}
+.badge{font-size:11px;background:var(--ai);color:var(--ai-ink);border-radius:6px;padding:0 6px}
+.style{display:flex;flex-direction:column;gap:8px}
+.style + .style{border-top:1px solid var(--line);padding-top:14px;margin-top:14px}
+.style h3{margin:0;font-family:var(--display);font-size:16px}
+.style h3 span{font-family:var(--body);font-size:12px;color:var(--muted);font-weight:400;margin-left:6px}
+.foods{display:flex;flex-wrap:wrap;gap:6px}
+.food{background:color-mix(in srgb,var(--amber) 16%,var(--surface));border:1px solid color-mix(in srgb,var(--amber) 40%,transparent);border-radius:8px;padding:2px 10px;font-size:13.5px}
+.why{font-size:13.5px;color:var(--muted)}
+.src{font-size:12px;color:var(--muted);line-height:1.7}
+.src a{color:inherit}
+
+/* ツミとバツ */
+.weigh{display:grid;grid-template-columns:48px 1fr 48px;gap:8px;align-items:center;margin-top:10px}
+.weigh button{height:48px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface2);font-size:22px;font-weight:700}
+.weigh input{text-align:center;font-family:var(--display);font-size:28px;font-weight:900;height:48px}
+.verdict{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:baseline;padding:10px 0;border-top:1px solid var(--line)}
+.verdict:first-of-type{border-top:none}
+.verdict b{font-family:var(--display);font-size:20px;font-weight:900}
+.verdict .sub{grid-column:1/-1}
+.chartbox{margin-top:8px}
+.chartbox svg{width:100%;height:auto;display:block}
+.readout{font-size:13px;min-height:1.6em;margin-top:6px}
+
+/* 設定 */
+.field{display:grid;grid-template-columns:96px 1fr;gap:10px;align-items:center;margin-top:10px}
+.field label{font-size:13.5px;font-weight:700}
+.formula{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:var(--display);font-weight:700;font-size:15px;text-align:center;margin:10px 0}
+.danger{border:1.5px solid color-mix(in srgb,var(--bad) 50%,transparent);color:var(--bad);background:transparent;border-radius:10px;padding:10px 14px;font-weight:700}
+
+/* 豆知識シート */
+.sheet{position:fixed;inset:0;z-index:20;display:flex;align-items:flex-end;justify-content:center;background:var(--shade)}
+.sheet .panel{background:var(--surface);width:100%;max-width:520px;max-height:88%;overflow:auto;border-radius:20px 20px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px;animation:up .25s ease}
+@keyframes up{from{transform:translateY(40px);opacity:.4}}
+.sheet .grab{width:44px;height:5px;border-radius:9px;background:var(--line);margin:0 auto}
+.sheet .ordered{background:color-mix(in srgb,var(--amber) 22%,var(--surface));border-radius:10px;padding:8px 12px;font-size:13.5px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.sheet .ordered span{white-space:pre-line}
+.sheet .ordered.ng{background:var(--bad);color:#fff}
+.sheet .ordered.ng button{color:#fff}
+.sheet .ordered button{border:none;background:none;color:var(--bad);font-weight:700;padding:0}
+.sheet h3{margin:0;font-family:var(--display);font-size:22px}
+.sheet .lvname{font-family:var(--display);font-weight:700;font-size:14px;color:var(--muted)}
+.facts{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.facts li{font-size:15px;line-height:1.75;padding-left:14px;position:relative}
+.facts li::before{content:"";position:absolute;left:0;top:.75em;width:6px;height:6px;border-radius:50%;background:var(--amber)}
+.brand{display:grid;grid-template-columns:1fr;gap:2px;padding:10px 0;border-top:1px solid var(--line)}
+.brand:first-child{border-top:none}
+.brand b{font-family:var(--display);font-size:16px}
+.brand span{font-size:14px;color:var(--muted)}
+
+.kijin{display:inline-block;font-size:11px;background:var(--bad);color:#fff;border-radius:6px;padding:0 6px;vertical-align:1px}
+/* 各カードを折りたたみ */
+.card.foldable > :first-child{cursor:pointer;position:relative;padding-right:24px;user-select:none}
+.card.foldable > :first-child::after{content:"";position:absolute;right:2px;top:50%;width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:translateY(-70%) rotate(45deg);transition:transform .2s}
+.card.foldable.collapsed > :first-child::after{transform:translateY(-30%) rotate(-45deg)}
+.card.foldable.collapsed > :not(:first-child){display:none!important}
+/* 下タブ */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));z-index:5}
+nav.tabs .in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:2px}
+nav.tabs button{border:none;background:transparent;border-radius:10px;padding:6px 0;font-size:10.5px;font-weight:700;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;white-space:nowrap}
+nav.tabs svg{width:24px;height:24px}
+nav.tabs button[aria-selected="true"]{color:var(--ink);background:var(--surface2)}
+nav.tabs button[aria-selected="true"] svg{color:var(--amber)}
+
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);opacity:0;background:var(--ink);color:var(--bg);border-radius:99px;padding:10px 18px;font-weight:700;font-size:14px;transition:.25s;z-index:30;display:flex;gap:12px;align-items:center;max-width:calc(100% - 32px);white-space:nowrap;pointer-events:none}
+.toast.on{opacity:1;transform:translateX(-50%);pointer-events:auto}
+.toast button{border:none;background:transparent;color:var(--amber);font-weight:700;padding:0}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+</head>
+<body>
+<header class="noren"><div class="noren-in"><h1>スピ系チェッカー</h1><span class="date num" id="hdrDate"></span></div></header>
+
+<div class="float off" id="float" role="button" tabindex="0" aria-label="カンゾウさんの画面に戻る">
+  <div class="m"><svg id="fLiver" viewBox="0 0 180 120" aria-hidden="true"></svg><div><b class="num" id="fG"></b><small class="num" id="fGp"></small></div></div>
+  <div class="m"><svg id="fSto" viewBox="0 0 180 130" aria-hidden="true"></svg><div><b class="num" id="fK"></b><small class="num" id="fKp"></small></div></div>
+</div>
+
+
+<main>
+<!-- きょう -->
+<section class="tab" id="tab-today">
+  <div class="sample" id="sampleBar" hidden><span>サンプルデータを表示中（デモ用）</span><button id="clearSample">消して始める</button></div>
+
+  <div class="seg" id="modeSeg"><button data-m="liver">カンゾウさん（お酒）</button><button data-m="stomach">ストマッくん（食べ物）</button></div>
+
+  <div class="card hero" id="hero">
+    <svg id="heroSvg" viewBox="0 0 180 120" aria-hidden="true"></svg>
+    <div>
+      <div class="who" id="heroWho"></div>
+      <div class="total num" id="heroTotal"></div>
+      <div class="sub num" id="heroSub"></div>
+      <div class="say" id="heroSay"></div>
+    </div>
+    <div class="gauge"><div class="bar"><i id="heroBar"></i></div><div class="ticks num" id="heroTicks"></div></div>
+    <div class="meta" id="heroMeta"></div>
+  </div>
+
+  <div id="alerts" class="stack"></div>
+
+  <div class="card" id="clearCard">
+    <div class="row between"><h2>抜けるまでの計算</h2><span class="sub" id="rateTxt"></span></div>
+    <div class="field" style="grid-template-columns:auto 110px 1fr;margin-top:8px"><label for="cW">体重</label><input type="number" id="cW" step="0.1" inputmode="decimal"><span class="sub">kg（分解の速さは体重で変わる）</span></div>
+    <div class="sub" style="margin-top:8px">きょうの体調</div>
+    <div class="seg" id="condSeg" style="margin-top:6px"><button data-c="bad">悪い</button><button data-c="mid">普通</button><button data-c="good">良い</button></div>
+    <div class="time"><div><div class="sub">あしたの仕事</div><input type="time" id="workTime" aria-label="あしたの仕事の開始時刻"></div><div class="seg" id="workSeg" style="align-self:end"><button data-w="on">あり</button><button data-w="off">なし</button></div></div>
+    <div class="budget" id="budget"></div>
+    <div class="sub" style="margin-top:8px">体重1kgあたり1時間に約0.1gを基準に、体調が「普通」なら1割、「悪い」なら2.5割遅く見積もります。仕事の1時間前には抜けているかで判定。個人差が大きい目安で、運転してよいかの判断には使えません。</div>
+  </div>
+
+  <div class="card" id="reviewCard" hidden>
+    <h2>ゆうべの振り返り</h2>
+    <div class="sub">寝落ちはその場で押せないので、翌朝ここで。</div>
+    <div class="chips" id="reviewChips" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card" id="okCard" hidden>
+    <div class="row between"><h2>おかわり</h2><span class="sub">きょう頼んだものをもう1つ</span></div>
+    <div class="okawari" id="okawari"></div>
+  </div>
+
+  <div class="card">
+    <div class="row between"><h2 id="stampTitle">頼んだ！</h2><span class="sub" id="stampSub">頼んだ時にタップ</span></div>
+    <div class="stamps" id="stamps"></div>
+  </div>
+
+  <div class="card" id="aiCard">
+    <div class="row between"><h2 id="aiTitle">メニューにないものを追加</h2><span class="sub" id="aiBadge"></span></div>
+    <div class="sub" style="margin-top:4px" id="aiLead"></div>
+    <div class="custom" style="grid-template-columns:1fr auto"><input type="text" id="aiName"><button class="btn" id="aiGo">AIで判定</button></div>
+    <div id="aiManual" class="custom" hidden></div>
+    <div id="aiResult" class="stack" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card">
+    <h2 id="fuzzyTitle">何杯か覚えてない…</h2>
+    <div class="sub" id="fuzzySub">記録しそびれた分を、酔い具合でざっくり足します</div>
+    <div class="fuzzy" id="fuzzy"></div>
+  </div>
+
+  <div class="card" id="shopCard"></div>
+
+  <details class="card memo" id="memo">
+    <summary><span>体調メモ</span><span class="sub num" id="memoSum"></span></summary>
+    <div class="counters" id="counters"></div>
+    <div class="hint" id="ctrHint"></div>
+  </details>
+
+  <div class="card" id="netaCard">
+    <div class="row between"><h2>きょうの一ネタ</h2><button class="btn ghost" id="netaNext" style="padding:4px 12px;font-size:13px">別のネタ</button></div>
+    <div class="neta" id="neta" style="margin-top:8px"></div>
+    <div class="neta-src" id="netaSrc"></div>
+  </div>
+
+  <div class="card">
+    <div class="row between"><h2>きょうの記録</h2><span class="sub num" id="logCount"></span></div>
+    <ul class="log" id="log"></ul>
+  </div>
+</section>
+
+<!-- カレンダー -->
+<section class="tab" id="tab-cal" hidden>
+  <div class="stats">
+    <div class="stat"><div class="k">今週のお酒（月〜日）</div><div class="v num" id="sWeek"></div></div>
+    <div class="stat"><div class="k" id="sMonthK">今月のお酒</div><div class="v num" id="sMonth"></div></div>
+    <div class="stat"><div class="k">休肝日（今月）</div><div class="v num" id="sRest"></div></div>
+    <div class="stat"><div class="k">飲んだ日の平均</div><div class="v num" id="sAvg"></div></div>
+  </div>
+  <div class="card">
+    <div class="calhead"><button id="prevM" aria-label="前の月">‹</button><h2 class="num" id="calTitle"></h2><button id="nextM" aria-label="次の月">›</button></div>
+    <div class="cal" id="cal"></div>
+    <div class="legend"><span><i style="background:var(--surface)"></i>休＝休肝日</span><span><i style="background:color-mix(in srgb,var(--amber) 22%,var(--surface))"></i>目安まで</span><span><i style="background:color-mix(in srgb,var(--amber) 48%,var(--surface))"></i>2倍まで</span><span><i style="background:color-mix(in srgb,var(--warn) 70%,var(--surface))"></i>3倍まで</span><span><i style="background:color-mix(in srgb,var(--bad) 72%,var(--surface))"></i>それ以上</span></div>
+  </div>
+  <div class="card" id="dayDetail"></div>
+  <div class="card">
+    <h2>お店ログ</h2>
+    <div style="overflow-x:auto;margin-top:8px"><table class="list num" id="shopTable"></table></div>
+  </div>
+</section>
+
+<!-- ペアリング -->
+<section class="tab" id="tab-pair" hidden>
+  <div class="card">
+    <h2>お店のタイプ</h2>
+    <div class="chips" id="genreChips" style="margin-top:10px"></div>
+  </div>
+  <div class="card" id="genreBody"></div>
+  <div class="card">
+    <h2>お酒のタイプ別</h2>
+    <div class="chips scroll" id="pairChips" style="margin-top:10px"></div>
+    <div id="pairBody" style="margin-top:12px"></div>
+  </div>
+  <div class="card">
+    <h2>飲む前に、胃に入れておきたいもの</h2>
+    <div class="sub" style="margin-top:4px">空腹で飲むとアルコールの吸収が速くなります。たんぱく質や脂肪を少し先に。</div>
+    <div class="foods" style="margin-top:10px"><span class="food">枝豆</span><span class="food">冷奴</span><span class="food">チーズ</span><span class="food">卵焼き</span><span class="food">ポテトサラダ</span></div>
+    <div class="why" style="margin-top:10px">お酒と同じくらいの量の水を合間に。日本酒造組合中央会はこれを「和らぎ水」と呼んで勧めています。</div>
+  </div>
+  <div class="src">
+    出典・参考<br>
+    ・日本酒の4タイプ分類：日本酒サービス研究会・酒匠研究会連合会（SSI）<br>
+    ・料理の濃さと酒のタイプ：酒類総合研究所「日本酒のおいしさ」（国税庁 審議会資料）<br>
+    ・和らぎ水：日本酒造組合中央会<br>
+    ・豆知識・逸話：サントリーお客様センター、Wikipedia（北大路魯山人／ビール／日本酒／ハイボール／チューハイ／竹鶴政孝／河内源一郎／ホッピー／梅酒／紹興酒／ワイン／若山牧水）ほか<br>
+    ・料理の組み合わせは一般的な相性の知見をもとにアプリ用にまとめたものです
+  </div>
+</section>
+
+<!-- ツミとバツ -->
+<section class="tab" id="tab-tsumi" hidden>
+  <div class="card">
+    <h2>ツミとバツ</h2>
+    <div class="sub">飲み食いが「罪」、翌朝の体重が「罰」。こっそり答え合わせするモードです。</div>
+    <div class="weigh"><button id="wMinus" aria-label="0.1kg減らす">−</button><input type="number" id="wIn" step="0.1" inputmode="decimal" aria-label="けさの体重"><button id="wPlus" aria-label="0.1kg増やす">＋</button></div>
+    <div class="row between" style="margin-top:8px"><span class="sub">けさの体重（kg）</span><button class="btn" id="wSave">記録する</button></div>
+  </div>
+  <div class="stats" id="tsumiStats"></div>
+  <div class="card">
+    <h2>罪と罰の関係</h2>
+    <div class="sub">前の日の飲み食いと、翌朝の体重の変化を比べています。</div>
+    <div id="verdicts" style="margin-top:6px"></div>
+  </div>
+  <div class="card">
+    <h2>体重（30日）</h2>
+    <div class="chartbox" id="wChart"></div>
+    <h2 style="margin-top:14px">摂取カロリー（30日）</h2>
+    <div class="sub">食べ物＋お酒のカロリー。点線は1日の目安。</div>
+    <div class="chartbox" id="kChart"></div>
+    <div class="readout num" id="readout"></div>
+  </div>
+</section>
+
+<!-- 設定 -->
+<section class="tab" id="tab-set" hidden>
+  <div class="card">
+    <h2>お酒レベル</h2>
+    <div class="sub">頼んだ時に出る豆知識の深さが変わります。「変人」は裏付けの取れていない話や俗説を集めた、真偽不明モードです。</div>
+    <div class="seg" id="levelSeg" style="margin-top:10px"><button data-l="1">初級者</button><button data-l="2">中級者</button><button data-l="3">上級者</button><button data-l="4">達人</button><button data-l="5">変人</button></div>
+  </div>
+  <div class="card">
+    <h2>プロフィール</h2>
+    <div class="sub">カロリーの目安と、アルコールが抜けるまでの時間の計算に使います。体重は「ツミとバツ」の記録と共通です。</div>
+    <div class="field"><label>性別</label><div class="seg" id="sexSeg"><button data-v="m">男性</button><button data-v="f">女性</button></div></div>
+    <div class="field"><label for="pAge">年齢</label><input type="number" id="pAge" inputmode="numeric"></div>
+    <div class="field"><label for="pH">身長（cm）</label><input type="number" id="pH" inputmode="decimal"></div>
+    <div class="field"><label for="pW">体重（kg）</label><input type="number" id="pW" step="0.1" inputmode="decimal"></div>
+    <div class="field"><label>ふだんの動き</label><div class="seg" id="actSeg"><button data-v="1.5">デスクワーク</button><button data-v="1.75">現場仕事</button></div></div>
+    <div class="sub" style="margin-top:10px" id="kcalTarget"></div>
+  </div>
+  <div class="card">
+    <h2>ついてくるカンゾウさん</h2>
+    <div class="sub">スクロールしたり別のタブを開いたりすると、右上に小さく付いてきて、きょうの量と何時に抜けるかを出します。</div>
+    <div class="seg" id="sbSeg" style="margin-top:10px"><button data-v="on">表示する</button><button data-v="off">表示しない</button></div>
+  </div>
+  <div class="card">
+    <h2>1日のお酒の目安</h2>
+    <div class="sub">厚生労働省のガイドラインでは、生活習慣病のリスクが高まる量を「男性40g以上・女性20g以上」としています。「節度ある適度な飲酒」は1日20g程度です。</div>
+    <div class="seg" id="limitSeg" style="margin-top:10px"><button data-l="20">20g</button><button data-l="40">40g</button></div>
+  </div>
+  <div class="card">
+    <h2>計算のしかた</h2>
+    <div class="formula">量(ml) × 度数(%) ÷ 100 × 0.8 ＝ 純アルコール(g)</div>
+    <div class="sub">0.8はアルコールの比重。10gを「1ドリンク」、お酒のカロリーは1gあたり7kcalで計算。アルコールが抜ける速さは「体重1kgあたり1時間に約0.1g」の目安を使っています。</div>
+  </div>
+  <div class="card">
+    <h2>データの書き出し・バックアップ</h2>
+    <div class="sub">記録はこのスマホ（ブラウザ）の中だけに保存され、どこにも送られません。機種変更やブラウザのデータ削除で消えるので、ときどきバックアップを保存してください。</div>
+    <div class="stack" style="margin-top:10px">
+      <button class="btn" id="expXlsx">Excelファイルに書き出す</button>
+      <button class="btn ghost" id="expCsv">CSVに書き出す（Googleスプレッドシート向け）</button>
+      <button class="btn ghost" id="expJson">バックアップを保存</button>
+      <label class="btn ghost" for="impJson" style="text-align:center;cursor:pointer">バックアップから戻す</label>
+      <input type="file" id="impJson" accept="application/json,.json">
+      <span class="sub" id="impMsg"></span>
+    </div>
+  </div>
+  <div class="card">
+    <h2>記録の管理</h2>
+    <div class="row" style="margin-top:10px"><button class="btn ghost" id="loadSample">サンプルデータを入れて試す</button></div>
+    <div class="row" style="margin-top:10px"><button class="danger" id="resetAll">すべての記録を消す</button><span class="sub" id="resetMsg"></span></div>
+  </div>
+  <div class="card">
+    <h2>このアプリについて</h2>
+    <div class="sub" style="line-height:1.8">20歳未満の飲酒は法律で禁止されています。飲酒運転は絶対にやめましょう。<br>このアプリの数値（純アルコール量・カロリー・アルコールが抜けるまでの時間）は一般的な目安から計算した推定値で、医療上の助言ではありません。体質・体調・服薬などで大きく変わります。運転や仕事をしてよいかの判断には使わないでください。<br>豆知識は公開情報をもとにまとめたものです。「変人」レベルの話は真偽を確認していません。</div>
+  </div>
+</section>
+</main>
+
+<nav class="tabs"><div class="in" role="tablist">
+  <button role="tab" data-tab="today" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10l-1 9a4 4 0 0 1-8 0z"/><path d="M12 16v5M8 21h8"/></svg>きょう</button>
+  <button role="tab" data-tab="cal" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>カレンダー</button>
+  <button role="tab" data-tab="pair" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14a7 7 0 0 1-14 0z"/><path d="M8 9c0-2 2-2 2-4M13 9c0-2 2-2 2-4"/></svg>ペアリング</button>
+  <button role="tab" data-tab="tsumi" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8.5 10a3.5 3.5 0 0 1 7 0"/><path d="M12 10l1.5-2"/></svg>ツミとバツ</button>
+  <button role="tab" data-tab="set" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg>設定</button>
+</div></nav>
+
+<div class="sheet" id="gate" hidden><div class="panel" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
+  <h3 id="gateTitle">スピ系チェッカーへようこそ</h3>
+  <div class="sub" style="line-height:1.8">お酒を頼んだ時にタップして、豆知識を読みながら飲める記録アプリです。記録はこのスマホの中だけに保存されます。</div>
+  <div class="alert warn"><b>はじめに確認してください</b><span>このアプリは20歳以上の方向けです。数値は目安で、医療上の助言ではありません。運転や仕事をしてよいかの判断には使わないでください。</span></div>
+  <div class="stack" id="gateBtns">
+    <button class="btn" id="gateYes" style="padding:12px">20歳以上です（はじめる）</button>
+    <button class="btn ghost" id="gateNo">20歳未満です</button>
+  </div>
+  <div class="stack" id="gateStart" hidden>
+    <button class="btn" id="startEmpty" style="padding:12px">空っぽで始める</button>
+    <button class="btn ghost" id="startSample">サンプルデータで試してみる</button>
+  </div>
+  <div class="sub" id="gateMsg"></div>
+</div></div>
+
+<div class="sheet" id="sheet" hidden><div class="panel" role="dialog" aria-modal="true" aria-labelledby="shName">
+  <div class="grab"></div>
+  <div class="ordered" id="shOrdered"><span id="shOrderedTxt"></span><button id="shUndo">取り消す</button></div>
+  <div class="row between"><h3 id="shName"></h3><span class="sub num" id="shSpec"></span></div>
+  <div class="chips" id="shSize" hidden></div>
+  <div class="seg" id="shTabs"><button data-t="info">豆知識</button><button data-t="brand">銘柄ずかん</button></div>
+  <div id="shInfo" class="stack">
+    <div class="seg" id="shLevel"><button data-l="1">初級者</button><button data-l="2">中級者</button><button data-l="3">上級者</button><button data-l="4">達人</button><button data-l="5">変人</button></div>
+    <div class="lvname" id="shLvName"></div>
+    <ul class="facts" id="shFacts"></ul>
+  </div>
+  <div id="shBrand" hidden></div>
+  <div class="row"><button class="btn ghost" id="shClose" style="flex:1;padding:12px">閉じて飲む</button></div>
+</div></div>
+
+<div class="toast" id="toast"><span id="toastMsg"></span><button id="toastUndo" hidden>元に戻す</button></div>
+
+<script>
+(function(){
+const KEY='spikei-checker';
+// ---------- お酒 ----------
+const DRINKS=[
+ {id:'nama',name:'生ビール',cat:'beer',ml:350,abv:5,ic:'mug',sizes:[['小',250,5],['中',350,5],['大',700,5]],def:'中'},
+ {id:'bin',name:'瓶ビール',cat:'beer',ml:500,abv:5,ic:'bottle',note:'中瓶'},
+ {id:'hb',name:'ハイボール',cat:'whisky',ml:350,abv:7,ic:'tall',sizes:[['普通',350,7],['濃いめ',350,9],['メガ',700,7]],def:'普通'},
+ {id:'sour',name:'レモンサワー',cat:'sour',ml:350,abv:5,ic:'tall',sizes:[['普通',350,5],['濃いめ',350,7],['メガ',700,5]],def:'普通'},
+ {id:'strong',name:'ストロング缶',cat:'sour',ml:350,abv:9,ic:'can'},
+ {id:'hoppy',name:'ホッピー',cat:'shochu',ml:110,abv:25,ic:'mug',note:'焼酎110ml'},
+ {id:'sake',name:'日本酒',cat:'sake',ml:180,abv:15,ic:'tokkuri',sizes:[['グラス',120,15],['1合',180,15],['2合',360,15]],def:'1合'},
+ {id:'rock',name:'焼酎ロック',cat:'shochu',ml:100,abv:25,ic:'rock'},
+ {id:'mizu',name:'焼酎水割り',cat:'shochu',ml:60,abv:25,ic:'tall',note:'焼酎60ml'},
+ {id:'red',name:'赤ワイン',cat:'wine',ml:120,abv:13,ic:'wine',sizes:[['グラス',120,13],['デキャンタ',300,13],['ボトル',750,13]],def:'グラス'},
+ {id:'white',name:'白ワイン',cat:'wine',ml:120,abv:12,ic:'wine',sizes:[['グラス',120,12],['デキャンタ',300,12],['ボトル',750,12]],def:'グラス'},
+ {id:'wsk',name:'ウイスキー',cat:'whisky',ml:30,abv:40,ic:'rock',sizes:[['シングル',30,40],['ダブル',60,40]],def:'シングル'},
+ {id:'ume',name:'梅酒ロック',cat:'ume',ml:90,abv:12,ic:'rock'},
+ {id:'china',name:'紹興酒',cat:'china',ml:90,abv:16,ic:'rock'},
+ {id:'nonal',name:'ノンアル',cat:'beer',ml:350,abv:0,ic:'can'}
+];
+const byId=Object.fromEntries(DRINKS.map(d=>[d.id,d]));
+const gOf=(ml,abv)=>ml*abv/100*0.8;
+function spec(d,size){if(!d.sizes)return {ml:d.ml,abv:d.abv,label:null};const pref=(typeof st!=='undefined'&&st.sizePref&&st.sizePref[d.id])||d.def;const sz=d.sizes.find(x=>x[0]===(size||pref))||d.sizes.find(x=>x[0]===d.def)||d.sizes[0];return {ml:sz[1],abv:sz[2],label:sz[0]}}
+const specTxt=(d,sp)=>`${sp.label?sp.label+'・'+sp.ml+'ml':(d.note||sp.ml+'ml')}・${sp.abv}%・${fmtG(gOf(sp.ml,sp.abv))}g`;
+const ICON={
+ mug:'<path d="M6 7h11v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2z"/><path d="M17 10h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2"/><path d="M6 7c0-2 2-3 3.5-2 1-1.5 4-1.5 5 0 1.5-.5 2.5.5 2.5 2"/>',
+ bottle:'<path d="M10 2h4v4l2 3v12a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V9l2-3z"/><path d="M8 13h8"/>',
+ tall:'<path d="M7 4h10l-1.5 17h-7z"/><path d="M8 9h8"/><circle cx="11" cy="13" r=".6"/><circle cx="13" cy="16" r=".6"/>',
+ can:'<rect x="7" y="4" width="10" height="17" rx="2"/><path d="M7 7h10M7 18h10"/>',
+ tokkuri:'<path d="M10 3h4v2c0 1 3 3 3 8s-2 8-5 8-5-3-5-8 3-7 3-8z"/><path d="M18 17h3l-.5 3h-2z"/>',
+ rock:'<path d="M5 8h14l-1.5 12h-11z"/><rect x="9" y="11" width="4" height="4" rx=".6" transform="rotate(12 11 13)"/>',
+ wine:'<path d="M7 3h10c0 5-2 8-5 8S7 8 7 3z"/><path d="M12 11v9M8 21h8"/>',
+ pod:'<path d="M5 17c3-8 9-12 15-12-1 7-6 13-14 14z"/><circle cx="10" cy="14" r="1.6"/><circle cx="13" cy="11" r="1.6"/><circle cx="16" cy="8.5" r="1.4"/>',
+ tofu:'<path d="M4 10l8-4 8 4v7l-8 4-8-4z"/><path d="M4 10l8 4 8-4M12 14v7"/>',
+ bowl:'<path d="M3 11h18a9 7 0 0 1-18 0z"/><path d="M9 7c0-2 2-2 2-4M14 7c0-2 2-2 2-4"/>',
+ plate:'<ellipse cx="12" cy="15" rx="9" ry="4"/><path d="M7 14c0-3 2-5 5-5s5 2 5 5"/>',
+ skewer:'<path d="M4 20L20 4"/><circle cx="9" cy="15" r="2.4"/><circle cx="12.5" cy="11.5" r="2.4"/><circle cx="16" cy="8" r="2.4"/>',
+ pizza:'<path d="M12 3l9 16H3z"/><circle cx="11" cy="12" r="1.2"/><circle cx="14" cy="15" r="1.2"/><circle cx="9" cy="16" r="1.2"/>',
+ noodle:'<path d="M3 11h18a9 7 0 0 1-18 0z"/><path d="M7 11V4M10 11V3M14 4l4 7"/>',
+ rice:'<path d="M3 12h18a9 7 0 0 1-18 0z"/><path d="M6 12c0-4 3-6 6-6s6 2 6 6"/>'
+};
+
+// ---------- 食べ物（kcalは一般的な1人前の目安） ----------
+const FOODS=[
+ {id:'edamame',name:'枝豆',kcal:120,ic:'pod'},{id:'yakko',name:'冷奴',kcal:90,ic:'tofu'},{id:'potesara',name:'ポテサラ',kcal:200,ic:'bowl'},
+ {id:'karaage',name:'唐揚げ',kcal:350,ic:'plate',note:'4個'},{id:'yakitori',name:'焼き鳥',kcal:180,ic:'skewer',note:'2本'},{id:'sashimi',name:'刺身盛り',kcal:200,ic:'plate'},
+ {id:'gyoza',name:'餃子',kcal:300,ic:'plate',note:'5個'},{id:'dashimaki',name:'だし巻き卵',kcal:150,ic:'tofu'},{id:'tempura',name:'天ぷら盛り',kcal:450,ic:'plate'},
+ {id:'motsuni',name:'もつ煮',kcal:250,ic:'bowl'},{id:'pizza',name:'ピザ',kcal:350,ic:'pizza',note:'2切れ'},{id:'pasta',name:'パスタ',kcal:650,ic:'noodle'},
+ {id:'steak',name:'ステーキ',kcal:500,ic:'plate'},{id:'nabe',name:'鍋',kcal:400,ic:'bowl',note:'1人前'},{id:'cheese',name:'チーズ盛り',kcal:200,ic:'tofu'},
+ {id:'ramen',name:'締めラーメン',kcal:600,ic:'noodle'},{id:'chazuke',name:'お茶漬け',kcal:250,ic:'rice'},{id:'rice',name:'ご飯',kcal:250,ic:'rice',note:'茶碗1杯'}
+];
+const fById=Object.fromEntries(FOODS.map(f=>[f.id,f]));
+
+// ---------- 豆知識（レベル別） ----------
+const LVN={1:'初級者：どんなもの？',2:'中級者：歴史と背景',3:'上級者：マニアックな話',4:'達人：上級者もうなる一ネタ',5:'変人：本当かどうか分からない話'};
+const INFO={
+ nama:{1:['ビールは、麦芽（発芽させた大麦）とホップと水を、酵母で発酵させた醸造酒。','中ジョッキ1杯（350ml・5%）で純アルコール約14g。'],
+  2:['古代メソポタミアのシュメール人は、大麦などからビールを造って「液体のパン」と呼んでいた。','1516年、ドイツ・バイエルンで原料を麦芽・ホップ・水に限る「ビール純粋令」が出された。今もドイツで効力がある。','日本で産業としてビール造りが始まったのは1869年。1876年には札幌に開拓使麦酒醸造所ができた。'],
+  3:['日本でいう「生ビール」は熱処理をしていないビールのこと。1979年に公正取引委員会がこの定義を示し、「生ビール論争」に決着がついた。','ラガーは10℃以下でじっくり発酵・貯蔵する下面発酵ビール。ラガーという名前自体が「貯蔵されたビール」という意味。','中ジョッキの量は店ごとに違い、350〜500mlほど。アプリは350mlで計算。'],
+  4:['北大路魯山人は、風呂上がりの決まった時間に冷えたビールが出てこないと機嫌を損ね、叱られて辞めたお手伝いが何人もいたと伝わる。','1724年、オランダ商館の一行が将軍吉宗にビールを献上。その場にいた通詞の今村市兵衛は、味をさんざんにけなす感想を書き残した。']},
+ bin:{1:['中身は生中と同じビール。中瓶1本（500ml）で約20g＝1日の目安ぴったり。','注ぎ合うと自分の量が分からなくなりがち。本数で数えるのがコツ。'],
+  2:['大瓶633ml・小瓶334mlという半端な量は、戦時中の酒税の都合から生まれた。','瓶が茶色いのは、紫外線からビールを守るため。'],
+  3:['1940年の酒税法改正をきっかけに各社の大瓶を調べると、最小が3.51合＝633.168ml。1944年に、この一番小さい瓶に統一された。小さい瓶に合わせれば、大きい瓶でも中身が足りなくならないから。','ホップの苦味成分が紫外線で分解されると「日光臭」という嫌なにおいが出る。茶色や緑の瓶はその対策だが、完全には防げない。'],
+  4:['戦後、GHQの方針で大日本麦酒が日本麦酒（今のサッポロ）と朝日麦酒（今のアサヒ）に分割された。今のライバル2社は、もとは同じ会社。','沖縄のオリオンビールは1957年の創業。']},
+ hoppy:{1:['ホッピーはビール風味の清涼飲料（アルコール約0.8%）。焼酎を割って飲むのが定番。','焼酎110ml＋ホッピー1本で約7%。アプリは公式の割合で計算。'],
+  2:['発売は1948年7月15日。戦後、東京・赤坂で製造が始まった。','焼酎を「ナカ」、ホッピーを「ソト」と呼ぶ。「ナカおかわり」で焼酎だけを追加。'],
+  3:['公式のおすすめは、25度の甲類焼酎110mlにホッピー1本。焼酎→ホッピーの順で泡立つように注ぎ、かき混ぜない。','ホッピー・焼酎・ジョッキを全部冷やす「三冷」が理想。氷は風味を損なうので入れない。'],
+  4:['創業者の石渡秀は、大正末期に出回った質の悪いノンアルビールを見て慎重になり、1926年に長野・野沢でホップ畑を見つけて研究を始めた。','店によってはナカの焼酎が公式より多い。ナカおかわりを重ねるほど濃くなるので、アプリの数字より多めに見ておこう。']},
+ nonal:{1:['ビールの風味で、アルコール0.00%なら純アルコール0g。休肝日のままでいられる。','乾杯だけ付き合いたい日や、車の日の味方。'],
+  2:['酒税法では、アルコール1%未満はお酒ではない扱い。0.5%などの商品もあるので表示を確認。','ホッピーもアルコール約0.8%で、清涼飲料水の扱い。'],
+  3:['大正末期にも「ノンビア」と呼ばれたノンアルビールのブームがあったが、質の悪いものが多かった。','作り方は大きく2つ。ビールを造ってからアルコールを抜く方法と、最初から発酵させずに味を組み立てる方法。'],
+  4:['国内で初めて「アルコール0.00%」をうたったビールテイスト飲料は、2009年発売のキリンフリー。']},
+ hb:{1:['ウイスキーを炭酸水で割った飲み物。ジョッキ1杯（350ml・7%）で約20g。','糖分がほとんどなく、食事に合わせやすい。'],
+  2:['名前の由来は、鉄道のボール信号説、気球説、背の高いグラス説など諸説ある。','戦後はトリスバーでブームに。その後ウイスキーは長く低迷し、2007年には販売量がピークの6分の1まで落ちた。','2008年、角瓶の「角ハイボール」復活作戦が始まり、翌年には市場が17%伸びた。'],
+  3:['1942年、サントリーは雑誌広告で「炭酸で割るとウイスキーの深い味が損なわれる」として、ストレートか水割りを勧めていた。今とは真逆。','広い意味のハイボールは、蒸留酒やリキュールを炭酸などで割ったもの全般。焼酎で作れば「焼酎ハイボール」＝チューハイ。'],
+  4:['人工の炭酸水が作れるようになった1760年代のヨーロッパでは、白ワインの炭酸割り（スプリッツァー）のほうが先に広まった。','1883年にワシントンで生まれた「ジョー・リッキー」もウイスキーの炭酸割りだが、ハイボールとは呼ばれなかった。']},
+ wsk:{1:['ウイスキーは、麦などの穀物を発酵させて蒸留し、木の樽で熟成させた蒸留酒。','シングル（30ml・40%）で約10g、ダブルで約20g。チェイサーの水は同じ量以上。'],
+  2:['竹鶴政孝は1918年にスコットランドへ渡り、グラスゴー大学で学びながら蒸留所で実習した。','1924年に山崎蒸溜所が完成し、竹鶴が初代所長に。1929年、最初の国産ウイスキー「白札」が発売された。','竹鶴は1934年に北海道・余市で独立し、のちのニッカウヰスキーを興した。'],
+  3:['樽で熟成する間に、毎年少しずつ蒸発して減る分を「天使の分け前」と呼ぶ。','トワイスアップ（ウイスキー1：常温の水1）は、ブレンダーが香りを確かめる飲み方。'],
+  4:['竹鶴がスコットランドでの実習をまとめた報告書は「竹鶴ノート」と呼ばれる。長く行方不明だったが、元の会社の関係者の子孫が保管していたと分かり、ニッカに寄贈された。','1962年、英国の外相が「ノートと万年筆で、ウイスキー造りの秘密を持っていかれた」という趣旨のことを語ったと伝わる。','竹鶴の妻リタは夫を「マッサン」と呼んだ。2014年のNHK朝ドラの題名はここから。']},
+ sake:{1:['日本酒は米・米こうじ・水で造る醸造酒。中身の約8割は水。','1合（180ml・15%）で約22g。'],
+  2:['香りと味わいで「薫酒・爽酒・醇酒・熟酒」の4タイプに分ける考え方がある（日本酒サービス研究会）。','常温を「冷や」と呼ぶ。冷蔵したものは「冷酒」。半分凍らせた「みぞれ酒」もある。','2024年、「伝統的酒造り」がユネスコ無形文化遺産に登録された。'],
+  3:['ビールは糖化が終わってから発酵させるが、日本酒は糖化と発酵を同じタンクで同時に進める「並行複発酵」。醸造酒なのに度数が高いのはこのため。','精米歩合の基準は、本醸造70%以下、吟醸60%以下、大吟醸50%以下。','酒蔵には「一麹、二酛、三造り」という言葉があり、麹づくりが一番大事とされる。','米と米こうじの重さの半分を超えない範囲で、醸造アルコールなどの副原料が使える。'],
+  4:['精米歩合の最高記録は、宮城・新澤醸造店の「零響 Crystal 0」で0.85%以下（2023年時点）。玄米の99%以上を削っている。','若山牧水「白玉の歯にしみとほる秋の夜の酒はしづかに飲むべかりけり」。1日1升飲んだといわれ、43歳で肝硬変により亡くなった。カンゾウさんは大事に。','お坊さんの間では、酒を「般若湯（はんにゃとう）」という隠語で呼んだ。','かつて大量に造られた「三倍増醸清酒（三増酒）」は、2006年の酒税法改正で清酒と名乗れなくなった。']},
+ rock:{1:['本格焼酎は、芋・麦・米・黒糖などを発酵させ、単式蒸留で造る蒸留酒。原料の風味が残る。','25度のロック100mlで約20g。'],
+  2:['昔の鹿児島の焼酎は、暑さで醪が腐りやすかった。1910年、河内源一郎が沖縄の泡盛の黒麹菌をもとに焼酎向けの麹菌を育て、品質が一気に上がった。','そのため河内源一郎は「近代焼酎の父」と呼ばれる。'],
+  3:['いまの本格焼酎の約9割が河内菌を使っているといわれる。韓国の焼酎やマッコリにも使われている。','1924年、河内は黒麹菌の中から白い突然変異を見つけた（河内白麹菌）。学会では無視されたが、1948年に京都大学の教授が証明した。','「薩摩」「球磨」「壱岐」「琉球」は、地理的表示（GI）で守られた焼酎の産地名。'],
+  4:['河内源一郎は麹を一年中持ち歩き、亡くなった時も試験管を懐に抱えていたといわれる。','実は晩年に取り組んでいたのは焼酎ではなく、発酵でうま味調味料（グルタミン酸ソーダ）を作る研究だった。']},
+ mizu:{1:['焼酎を水やお湯で割った飲み方。焼酎60mlの水割りで約12g。','濃いと感じたら、水を足してもらおう。'],
+  2:['鹿児島では晩酌を「だれやめ」という。「だれ（疲れ）」を「やめる」という意味。','焼酎6：お湯4の「ロクヨン」が定番の割合といわれる。'],
+  3:['前の日から水で割って寝かせる「前割り」は、角が取れてまろやかになる。','お湯割りは「お湯が先、焼酎があと」。温度差で自然に混ざる。'],
+  4:['「黒ぢょか」は鹿児島の焼酎用の土瓶。前割りした焼酎を直火でじんわり温めて飲む。']},
+ sour:{1:['酎ハイは「焼酎ハイボール」の略。焼酎を炭酸で割り、レモンなどで味をつけたもの。','1杯（350ml・5%）で約14g。'],
+  2:['焼酎を炭酸で割る飲み方は、昭和30年代に東京の下町を中心に広がった。','1950年発売の割り材「ホイス」が元祖とされる。のちに居酒屋チェーンの定番になって全国に広まった。'],
+  3:['缶チューハイの先駆けは1983年の「タコハイ」。翌1984年に「タカラcanチューハイ」が出た。','酒税法には「チューハイ」という分類はない。','チューハイとサワーは本来別物だが、居酒屋ではほぼ同じ意味で使われている。'],
+  4:['商標登録されなかったため、「酎ハイ」の名は長く東京下町だけの呼び名だった。区別して「下町ハイボール」とも呼ばれる。']},
+ strong:{1:['アルコール9%前後の缶チューハイ。350ml1本で純アルコール約25g＝1本で1日の目安を超える。','500ml缶なら約36g。日本酒2合近く。'],
+  2:['2008年にキリンが8%の「氷結ストロング」、2009年にサントリーが「ストロングゼロ」を出してブームに。','7%以上の商品の売上は、2010年から2019年で約4倍に伸びた（サントリー推計）。'],
+  3:['発泡性で10%未満のお酒は、酒税が1キロリットルあたり8万円と最低水準。安さの理由の一つ。','多くの商品は、リキュールの上限（13度未満）を超えない12度以下にとどまる。'],
+  4:['2024年の初めから、大手がストロング系の販売を縮小する動きが出た。同じ年の2月、厚生労働省が飲酒ガイドラインを公表している。']},
+ red:{1:['赤ワインは、黒ブドウを皮ごと発酵させた醸造酒。皮から色と渋み（タンニン）が出る。','グラス1杯（120ml・13%）で約12g。ボトル1本なら約78g。'],
+  2:['ジョージアで見つかった約8000年前の壺が、世界最古のワイン造りの痕跡とされる（2017年発表）。','古代ギリシアでは、ワインを水で割って飲むのが当たり前。原酒のままは野蛮とされた。','日本では江戸時代の初め、小倉藩でワインが造られたとされる。'],
+  3:['赤は冷やしすぎると香りが立ちにくく、苦味が増す。','多くの赤はマロラクティック発酵で酸味をまろやかにしている。','タンニンは果皮・種・果梗から、アルコールの力で溶け出す。'],
+  4:['北大路魯山人はパリの名店トゥール・ダルジャンで名物の鴨を食べた際、ソースが合わないと評し、持参した粉わさびと醤油で食べたと伝わる。美味しんぼの海原雄山を思わせる逸話。','中国の殷王朝末期の墓からは、封をされたままの約3000年前のワイン容器が見つかっている。']},
+ white:{1:['白ワインは、主に色の薄いブドウの果汁だけを発酵させる。だから渋みが少なく、酸味が主役。','グラス1杯（120ml・12%）で約12g。'],
+  2:['修道士ドン・ペリニヨンは「シャンパンを発明した人」と言われるが、本当に発明者かははっきりしない。','アイスワインは凍ったブドウから搾るので、1房からとれる果汁はティースプーン1杯ほど。最大の生産国はカナダ。'],
+  3:['シュール・リーは澱（おり）と一緒に寝かせる製法。日本では5か月以上の接触と、6月30日までの瓶詰めが決まり。','果汁と皮を1〜24時間触れさせる「スキンコンタクト」で香りを引き出す造り方もある。'],
+  4:['「日本ワイン」と名乗れるのは、国産ブドウ100%で国内製造のものだけ（2018年からの表示ルール）。山梨の「甲州」は日本固有の白ブドウ品種。']},
+ ume:{1:['梅を砂糖と一緒に焼酎などに漬けたお酒。市販品の多くは8〜15度。','ロック1杯（90ml・12%）で約9g。'],
+  2:['最古の記録は江戸時代・元禄期の『本朝食鑑』で、作り方が載っている。','家で梅酒を漬けるのは、1962年の酒税法改正まで違法だった。それでも多くの家庭で作られていた。'],
+  3:['今も家で漬けるなら、20度以上の酒を使うのが条件。日本酒やみりんで漬けると違法になる。','梅1kgに氷砂糖0.2〜1kg、ホワイトリカー約1.8Lがよくある割合。'],
+  4:['法改正のきっかけは1961年。内閣の広報参与だった人物が新聞に梅酒の随筆を書き、「家で漬けたら違法では」と騒ぎになったことだとされる。']},
+ china:{1:['紹興酒は、中国・浙江省紹興市でもち米と麦麹から造る醸造酒「黄酒」の一種。3年以上熟成させる。','度数は14〜18度。グラス1杯（90ml・16%）で約12g。'],
+  2:['長く熟成した黄酒は「老酒（ラオチュウ）」と呼ばれる。','鑑湖という湖の水で仕込むのが本場の条件で、「鑑湖名酒」とも呼ばれる。'],
+  3:['甘さで4タイプある：元紅酒（辛口）・加飯酒・善醸酒・香雪酒（甘口）。','酵母は20度近くで発酵を止める。甘口タイプはその後も麹の糖化だけが進むので甘くなる。','日本では砂糖を入れる人もいるが、南中国や台湾では干し梅「話梅」を入れて飲むのが一般的。'],
+  4:['娘が生まれると酒甕を土に埋め、嫁入りの日に掘り出して持たせる「女児紅」という風習があった。','男の子なら「状元紅」。「状元」は科挙のトップ合格者のことで、出世を願って埋めた。']}
+};
+// ---------- 銘柄ずかん ----------
+const BRANDS={
+ beer:[['アサヒスーパードライ','1987年発売。大ヒットして「辛口」ブームを起こした。'],['キリンビール','1888年発売。キリンの名を冠した最初のビール。'],['サッポロ','1876年に札幌にできた開拓使麦酒醸造所がルーツ。'],['オリオンビール','1957年、沖縄で創業。'],['キリンフリー','2009年発売。国内初のアルコール0.00%のビールテイスト飲料。']],
+ hoppy:[['ホッピー','1948年発売。製造はホッピービバレッジ。'],['黒ホッピー','色の濃いタイプ。焼酎の割り方は同じ。']],
+ whisky:[['サントリー白札','1929年発売。竹鶴政孝が山崎で造った最初の国産ウイスキー。'],['山崎蒸溜所','1924年完成。日本初の本格モルトウイスキー蒸溜所。'],['角瓶','2008年からの「角ハイボール」でハイボール復活の立役者に。'],['トリス','戦後のトリスバー・ブームの主役。'],['余市','竹鶴政孝が1934年に独立した北海道の地。ニッカの原点。']],
+ sake:[['零響 Crystal 0','宮城・新澤醸造店。精米歩合0.85%以下という最高記録の酒。'],['獺祭','山口・旭酒造。'],['久保田','新潟・朝日酒造。'],['八海山','新潟・八海醸造。'],['十四代','山形・高木酒造。']],
+ shochu:[['黒霧島','宮崎・霧島酒造の芋焼酎。'],['いいちこ','大分・三和酒類の麦焼酎。'],['森伊蔵・魔王・村尾','頭文字から「3M」と呼ばれるプレミア芋焼酎。'],['百年の孤独','宮崎・黒木本店。長期熟成の麦焼酎。']],
+ sour:[['ホイス','1950年発売。チューハイの元祖とされる割り材。'],['タコハイ','1983年発売。缶チューハイの先駆け。'],['タカラcanチューハイ','1984年発売。'],['氷結ストロング','2008年発売の8%。ストロング系の走り。'],['ストロングゼロ','2009年発売。']],
+ wine:[['カベルネ・ソーヴィニヨン','渋みのしっかりした赤の代表品種。'],['ピノ・ノワール','軽やかで繊細な赤。鴨と好相性。'],['シャルドネ','白の代表品種。樽の香りをつけたものも多い。'],['甲州','日本固有の白ブドウ。和食に合わせやすい。']],
+ ume:[['チョーヤ梅酒','大阪のメーカー。梅酒の定番。']],
+ china:[['古越龍山','紹興酒の代表的な銘柄の一つ。'],['塔牌','紹興酒の代表的な銘柄の一つ。']]
+};
+const brandKey=id=>id==='hoppy'?'hoppy':(byId[id]||{}).cat;
+// ---------- 食べ物の豆知識（レベル別） ----------
+const FINFO={
+ edamame:{1:['枝豆は、大豆がまだ若くて緑色のうちに収穫したもの。','1皿で約120kcal。'],2:['枝ごと茹でて売り歩いたことから「枝豆」と呼ばれるようになったといわれる。江戸の夏の風物詩。'],3:['大豆と同じ植物だが、枝豆は「野菜」、大豆は「豆類」として扱われる。','塩茹での前に塩でもんで産毛を取ると、口当たりがよくなる。'],4:['山形・鶴岡の「だだちゃ豆」の「だだちゃ」は、庄内の言葉で「お父さん」のこと。'],5:['殿様が「これはどこのだだちゃの豆か」と尋ねたのが、だだちゃ豆の名前の由来——という話が伝わる。']},
+ yakko:{1:['冷やした豆腐に、ねぎや生姜などの薬味と醤油をかけて食べる料理。','半丁で約90kcal。'],2:['名前は、武家に仕えた「奴（やっこ）」の着物の四角い紋に、豆腐の形が似ていたからといわれる。'],3:['豆腐を固めるには「にがり」（塩化マグネシウム）や「すまし粉」（硫酸カルシウム）を使う。','木綿は一度崩して固め直し、絹ごしは豆乳をそのまま固める。'],4:['1782年、豆腐料理を100品集めた料理本『豆腐百珍』が江戸で大ヒットし、続編まで出た。'],5:['漫画『美味しんぼ』の第1話は豆腐と水がテーマだった、とよく言われる。']},
+ potesara:{1:['茹でたじゃがいもを潰し、きゅうりや玉ねぎ、ハムなどとマヨネーズで和えたサラダ。','1皿で約200kcal。マヨネーズの分、意外と高め。'],2:['国産マヨネーズは1925年にキユーピーが発売したのが始まり。'],3:['ロシアの「オリヴィエ・サラダ」が祖先の一つとされる。'],4:['居酒屋のポテサラには店の個性が出る、と言われる。いぶりがっこや燻製卵を入れる店も。'],5:['ポテサラにソースをかけるのは関西の文化、という説がある。']},
+ karaage:{1:['鶏肉に下味をつけ、粉をまぶして油で揚げた料理。','4個で約350kcal。'],2:['大分県の中津市や宇佐市は「からあげの聖地」と呼ばれ、専門店がたくさんある。'],3:['「唐揚げ」と「空揚げ」、どちらの書き方もある。','江戸時代の中国風の精進料理（普茶料理）にも「唐揚」という名前の料理があった。'],4:['北海道では鶏の唐揚げを「ザンギ」と呼ぶ。下味をしっかりつけるのが特徴。'],5:['大皿の唐揚げに勝手にレモンをかけるのは御法度——という「レモン論争」に決着はない。']},
+ yakitori:{1:['鶏肉を串に刺して焼く。味つけは塩かタレ。','2本で約180kcal。'],2:['北海道の美唄・室蘭、愛媛の今治は「日本三大やきとり」と呼ばれることがある。'],3:['焼き鳥に使う備長炭は、紀州（和歌山）のウバメガシなどから作る。名前は江戸時代の商人・備中屋長左衛門から。'],4:['「ねぎま」は本来、葱（ねぎ）と鮪（まぐろ）の鍋のこと。いまは鶏とねぎの串を指す。','室蘭のやきとりは、鶏ではなく豚肉と玉ねぎ。洋がらしをつけて食べる。'],5:['串から外して食べるのは失礼という派と、取り分けやすいから気にしない派で意見が割れている。']},
+ sashimi:{1:['生の魚介を切って、醤油とわさびで食べる料理。','盛り合わせ1皿で約200kcal。'],2:['江戸時代に醤油が広まり、いまのような刺身の食べ方が定着した。'],3:['わさびの辛味は、すりおろして細胞を壊したときに生まれる。細かくするほど辛くなる。'],4:['大分・佐賀関で一本釣りされる「関あじ」「関さば」は、地域ブランドとして知られる。'],5:['「切り身」と呼ばずに「刺身」と呼ぶのは、武家が「切る」という言葉を嫌ったから——という説がある。']},
+ gyoza:{1:['小麦粉の皮で、ひき肉と野菜のあんを包んだ料理。','5個で約300kcal。'],2:['中国では茹でる「水餃子」が主流。日本では焼き餃子が定着した。'],3:['宇都宮と浜松は、餃子の購入額日本一を毎年のように争ってきた。近年は宮崎も参戦。'],4:['浜松餃子は円形に並べて焼き、真ん中に茹でもやしを添えるのが定番。'],5:['日本で最初に餃子を食べたのは水戸黄門（徳川光圀）だ、という説がある。']},
+ dashimaki:{1:['溶き卵にだしを加え、何層にも巻きながら焼いた卵焼き。','1皿で約150kcal。'],2:['関西ではだしを効かせた「だし巻き」、関東では砂糖を入れた甘い卵焼きが主流。'],3:['寿司屋では卵焼きを「ギョク（玉）」と呼ぶ。'],4:['四角い銅の卵焼き器は熱が均一に伝わるので、職人に好まれる。'],5:['寿司屋の腕前は卵焼きでわかる、とよく言われる。']},
+ tempura:{1:['魚介や野菜に、小麦粉を水で溶いた衣をつけて揚げた料理。','盛り合わせで約450kcal。'],2:['江戸時代、天ぷらは屋台で串に刺して立ち食いする庶民の食べ物だった。'],3:['衣を冷水で溶いて混ぜすぎないのがサクッと揚げるコツ。粘りの元になるグルテンが出にくい。'],4:['「天ぷら」の語源は、ポルトガル語から来たという説が有力だが、ほかにも諸説ある。'],5:['徳川家康の死因は鯛の天ぷらの食べすぎ、という話が有名。ただ食べてから亡くなるまで3か月ほどあり、胃がん説も根強い。']},
+ motsuni:{1:['豚や牛の内臓（もつ）を、味噌や醤油で野菜と煮込んだ料理。','1杯で約250kcal。'],2:['「もつ」は「臓物（ぞうもつ）」の略。'],3:['何度も下茹でして臭みを抜くのが、おいしいもつ煮の決め手。'],4:['群馬の永井食堂の「もつ煮」は、持ち帰り用のパックが通販で買えるほどの人気。'],5:['「ホルモン」は関西弁の「放るもん（捨てるもの）」から来た——という話は有名だが、医学用語のホルモンが由来とする説が有力。']},
+ pizza:{1:['小麦の生地にトマトソースやチーズをのせて焼いたイタリア料理。','2切れで約350kcal。'],2:['マルゲリータは、1889年に王妃マルゲリータに献上されたのが名前の由来と伝わる。トマト・モッツァレラ・バジルでイタリア国旗の色。'],3:['2017年、ナポリのピッツァ職人の技がユネスコ無形文化遺産に登録された。'],4:['本場ナポリでは、1人1枚を丸ごと食べるのがふつう。'],5:['マルゲリータ誕生の話は、のちに作られた宣伝の色が濃いという説もある。']},
+ pasta:{1:['デュラム小麦のセモリナ粉で作る麺。ソースと和えて食べる。','1皿で約650kcal。'],2:['「アルデンテ」はイタリア語で「歯ごたえがある」。芯がわずかに残る茹で加減のこと。'],3:['ナポリタンはイタリアではなく、横浜のホテルニューグランドで生まれたとされる日本の料理。'],4:['ショートパスタの溝や穴は、ソースをよく絡めるための形。'],5:['カルボナーラは、戦後ローマに駐留した米兵のベーコンと卵から生まれた——という説がある。']},
+ steak:{1:['厚く切った肉を焼いた料理。主に牛肉。','1枚で約500kcal。'],2:['焼き加減は、レア・ミディアム・ウェルダンが基本。'],3:['焼いたあと数分休ませると、肉汁が落ち着いて切っても流れ出にくい。'],4:['神戸ビーフ・松阪牛・近江牛は「日本三大和牛」と呼ばれることが多い。'],5:['「焼く前に肉を常温に戻すべき」は定番の教えだが、効果は小さいとする料理研究家もいる。']},
+ nabe:{1:['土鍋で具材を煮ながら、みんなで取り分けて食べる料理。','1人前で約400kcal。締めを入れるとさらに増える。'],2:['寄せ鍋・ちゃんこ・もつ鍋・きりたんぽなど、地方ごとの名物鍋がある。'],3:['鍋の汁は塩分が多い。締めの雑炊やうどんで汁を吸わせると、塩分もまるごと取ることになる。'],4:['相撲の「ちゃんこ」は、力士が作る料理全般のこと。鍋に限らない。'],5:['「鍋奉行」がいる鍋はおいしくなる、という説。']},
+ cheese:{1:['牛や羊、山羊の乳を固めて熟成させた食品。','盛り合わせで約200kcal。'],2:['フランスのロックフォールは羊乳の青カビチーズで、1925年にフランス初の原産地呼称（AOC）に認められた。'],3:['長く熟成したハードチーズの白いジャリっとした粒は、アミノ酸の結晶。'],4:['ワインとチーズは「同じ産地のもの同士」を合わせるのが基本といわれる。'],5:['羊の胃袋で作った袋に乳を入れて運んだら固まっていたのがチーズの始まり——という伝説がある。']},
+ ramen:{1:['小麦の麺をスープに入れた料理。','1杯で約600kcal。飲んだ後だと1日の目安を大きく超えがち。'],2:['札幌・博多・喜多方は「三大ご当地ラーメン」と呼ばれることが多い。'],3:['1958年、日清食品の安藤百福が世界初のインスタントラーメン「チキンラーメン」を発売した。'],4:['飲んだ後にラーメンが欲しくなるのは、アルコールの分解で血糖値が下がったり、塩分や水分が欲しくなるためと考えられている。'],5:['日本で最初にラーメンを食べたのは水戸黄門、という話が長く信じられてきたが、もっと古い室町時代の記録が見つかったという話もある。']},
+ chazuke:{1:['ご飯にお茶やだしをかけ、のりや梅干し、鮭などをのせて食べる。','1杯で約250kcal。'],2:['1952年に永谷園が「お茶づけ海苔」を発売し、家庭の定番になった。'],3:['だしをかけるものは「だし茶漬け」と呼んで区別することもある。'],4:['鯛の刺身を胡麻だれに漬けてお茶漬けにする「鯛茶漬け」は、福岡や愛媛などの名物。'],5:['京都で「ぶぶ漬けでもどうどす」と言われたら「そろそろお帰りを」の意味——という話は有名だが、実際に言われた人は少ないとも。']},
+ rice:{1:['お米を炊いたもの。茶碗1杯（150g）で約250kcal。'],2:['「コシヒカリ」は日本でいちばん多く作られている品種。'],3:['炊く前に30分以上水に浸すと、芯までふっくら炊ける。'],4:['新米は水分が多いので、炊くときの水を少し減らすとちょうどいい。'],5:['「ご飯を残すと目がつぶれる」という言い伝えがある。']}
+};
+const FBRANDS={
+ edamame:[['だだちゃ豆','山形・鶴岡'],['黒崎茶豆','新潟'],['丹波の黒豆の枝豆','兵庫・京都。秋の短い時期だけ']],
+ yakko:[['京都の豆腐','水がよく、豆腐の名店が多い'],['男前豆腐店','ユニークな商品名で知られる豆腐メーカー']],
+ potesara:[['キユーピー マヨネーズ','1925年発売。国産マヨネーズの始まり']],
+ karaage:[['中津からあげ','大分・中津'],['ザンギ','北海道'],['せきとりの半身揚げ','新潟']],
+ yakitori:[['美唄やきとり','北海道。もつと肉を1本に刺す'],['室蘭やきとり','北海道。豚肉と玉ねぎ'],['今治やきとり','愛媛。鉄板で押し焼き']],
+ sashimi:[['関あじ・関さば','大分・佐賀関'],['大間まぐろ','青森'],['氷見の寒ぶり','富山']],
+ gyoza:[['宇都宮餃子','栃木'],['浜松餃子','静岡。円形に並べてもやしを添える'],['宮崎餃子','宮崎']],
+ dashimaki:[['京都のだし巻き','錦市場の名物']],
+ tempura:[['江戸前天ぷら','ごま油で揚げる東京の天ぷら']],
+ motsuni:[['永井食堂のもつ煮','群馬']],
+ pizza:[['ナポリピッツァ','薪窯で短時間で焼く']],
+ pasta:[['ナポリタン','横浜・ホテルニューグランド発祥とされる']],
+ steak:[['神戸ビーフ','兵庫'],['松阪牛','三重'],['近江牛','滋賀']],
+ nabe:[['もつ鍋','福岡・博多'],['きりたんぽ鍋','秋田'],['ちゃんこ鍋','東京・両国']],
+ cheese:[['ロックフォール','フランス。羊乳の青カビ'],['パルミジャーノ・レッジャーノ','イタリア。長期熟成'],['カマンベール','フランス・ノルマンディー']],
+ ramen:[['札幌ラーメン','味噌'],['博多ラーメン','豚骨・細麺・替え玉'],['喜多方ラーメン','福島。醤油・平打ち麺'],['チキンラーメン','1958年発売の世界初のインスタント']],
+ chazuke:[['お茶づけ海苔','永谷園・1952年発売'],['鯛茶漬け','福岡・愛媛など']],
+ rice:[['魚沼産コシヒカリ','新潟'],['ゆめぴりか','北海道'],['つや姫','山形']]
+};
+// お酒の変人モード（真偽不明の話）
+const KIJIN={
+ nama:['中世ヨーロッパでは水が汚れていたのでビールを水代わりに飲んでいた、という話がよく語られる。ただ裏付けは弱く、俗説とする見方も多い。','「とりあえずビール」は、乾杯までを早く済ませるための日本独特の習慣だ、という説がある。'],
+ bin:['瓶ビールのほうが生ビールよりおいしい、と言い張る人がいる。ただ今の国産瓶ビールの多くは、中身も「生」。'],
+ hoppy:['もとは「ホップビー」という名前にしたかったが、ビールと紛らわしいので「ホッピー」になった、という話が伝わる。'],
+ nonal:['ノンアルビールでも気分で少し酔った気がする人がいる。プラシーボ効果だとよく言われる。'],
+ hb:['ハイボールの名は、イギリスのゴルフ場でウイスキーを飲んでいたら高く上がったボールが飛んできたから、という説もある。'],
+ wsk:['ウイスキーの発祥はアイルランドかスコットランドか、両国でいまも決着がついていない。'],
+ sake:['漫画『美味しんぼ』で山岡士郎が醸造アルコールを加えた酒を厳しく批判し、純米酒ブームのきっかけになった——とよく語られる。どの回で何を言ったかまでは確認できていない。','「日本酒は二日酔いしやすい」と言われるが、量が同じなら他のお酒と大差ないという見方もある。'],
+ rock:['「焼酎は二日酔いしにくい」とよく言われる。蒸留酒だからという理由だが、結局は飲む量次第。'],
+ mizu:['お湯割りを「お湯が先」にするとまろやかになるのは、焼酎とお湯がなじむから、と説明されることがあるが、科学的にはっきりしない。'],
+ sour:['レモンサワーは東京・中目黒の大衆酒場が発祥、という説がある。'],
+ strong:['ストロング系がはやったのは「安く早く酔えるから」と言われるが、メーカーは果汁感や爽快感を売りにしていた。'],
+ red:['「赤ワインは体にいい（フレンチ・パラドックス）」という話は有名だが、健康効果ははっきりしていない。'],
+ white:['ドン・ペリニヨンが初めて泡のワインを飲んで「星を飲んでいるようだ」と叫んだ、という有名な話は、後の時代に作られた宣伝文句だとする説が強い。'],
+ ume:['「梅は三毒を断つ」ということわざがある。梅酒も体にいい…と言いたいところだが、お酒はお酒。'],
+ china:['紹興酒に砂糖を入れるのは、昔の日本に入ってきた紹興酒の質が悪く、ごまかすためだった、という説がある。']
+};
+Object.keys(KIJIN).forEach(id=>{INFO[id][5]=KIJIN[id]});
+
+
+// ---------- お店のタイプ別ペアリング ----------
+const GENRES={
+ ie:{label:'家飲み',tip:'家だと量が見えにくい。缶や瓶は1本ずつ記録を。',pairs:[['冷奴','nama','さっぱり同士で最初の1杯に。'],['唐揚げ','hb','炭酸とキレで油を流す。'],['刺身','sake','スーパーの刺身でも冷酒で格上げ。'],['チーズ','red','塩気と脂に渋みが合う。']],neta:[]},
+ izakaya:{label:'居酒屋',tip:'最初に枝豆や冷奴でお腹に下地を。',pairs:[['唐揚げ','hb','炭酸とキレで脂を流す。'],['焼き鳥（塩）','sour','レモンの酸味で軽く。'],['ポテサラ','nama','マヨのコクにビールの苦味。'],['だし巻き卵','sake','だしのやさしさに軽い爽酒。'],['もつ煮','mizu','煮込みの甘辛に焼酎のお湯割り。']],
+  neta:['チューハイは昭和30年代に東京の下町で広まり、商標登録がなかったので長く下町だけの呼び名だった。居酒屋チェーンの定番になって全国区に。','ホッピーの「ナカ」は焼酎、「ソト」はホッピー。ナカだけおかわりするのが通の頼み方。']},
+ kaisen:{label:'海鮮居酒屋',tip:'生ものには冷酒、焼き物や煮物には燗が合わせやすい。',pairs:[['白身の刺身','sake','香りの高い薫酒か軽快な爽酒で。'],['牡蠣','white','白ワインの酸味がレモン代わり。'],['しめ鯖','sake','酢と脂に旨味のある醇酒をぬる燗で。'],['焼き魚','mizu','麦焼酎の水割りですっきり。'],['海鮮天ぷら','hb','衣の油をハイボールで流す。']],
+  neta:['熱燗には、焼いたふぐのひれを浸す「ひれ酒」や、焼き魚を浸す「骨酒」という楽しみ方がある。','日本酒は糖化と発酵を同時に進める「並行複発酵」。醸造酒なのに度数が高いのはこのため。']},
+ yakitori:{label:'焼き鳥',tip:'塩は軽い酒、タレはコクのある酒が基本。',pairs:[['ねぎま（塩）','sour','塩とレモンは鉄板。'],['つくね（タレ）','sake','甘辛のタレに醇酒の旨味。'],['レバー','red','鉄分の風味に赤の渋み。'],['皮','hb','脂を炭酸で切る。'],['ささみわさび','sake','淡白さに冷やした爽酒。']],
+  neta:['ハイボールの名前の由来は、鉄道のボール信号説、気球説、背の高いグラス説など諸説ある。どれが本当かは分かっていない。']},
+ yakiniku:{label:'焼肉',tip:'脂が多いので、ハイボールやサワーと水を交互に。',pairs:[['タン塩','sour','レモンを搾る料理にはレモンサワー。'],['カルビ','hb','脂をハイボールで流す。'],['ハラミ','red','赤身の旨味に赤の渋み。'],['ホルモン','rock','脂の甘みに芋焼酎ロック。'],['キムチ','nama','辛さを炭酸でリセット。']],
+  neta:['いまの本格焼酎の約9割が「河内菌」という麹菌を使っているといわれ、韓国の焼酎やマッコリにも使われている。焼肉屋の焼酎も、元をたどると鹿児島の研究者にたどり着くかも。']},
+ chuka:{label:'中華',tip:'油の多い料理が続くので、烏龍茶やジャスミン茶をチェイサーに。',pairs:[['麻婆豆腐','china','山椒と発酵の香りに紹興酒。'],['餃子','nama','ビールで脂と熱さをリセット。'],['小籠包','china','常温の紹興酒で肉汁を受け止める。'],['黒酢の酢豚','red','甘酸っぱさに赤ワイン。'],['エビチリ','white','甘辛に白の酸味。']],
+  neta:['紹興酒は、娘が生まれると酒甕を土に埋め、嫁入りの日に掘り出して持たせる「女児紅」という風習があった。','南中国や台湾では、紹興酒に干し梅「話梅」を入れて飲むのが一般的。']},
+ nabe:{label:'鍋',tip:'鍋は汁ものなので塩分が多め。締めの前に水を1杯。',pairs:[['寄せ鍋','sake','醇酒のぬる燗でじんわり。'],['もつ鍋','mizu','芋焼酎のお湯割り。'],['キムチ鍋','sour','辛さにレモンサワー。'],['水炊き','sake','鶏だしに冷やの爽酒。'],['すき焼き','red','甘辛に赤ワイン。']],
+  neta:['お湯割りは「お湯が先、焼酎があと」。温度差で自然に混ざってまろやかになる。鹿児島では晩酌を「だれやめ」と呼ぶ。']},
+ italian:{label:'イタリアン',tip:'パンとパスタで炭水化物が重なりやすい。ストマッくんに注意。',pairs:[['マルゲリータ','nama','トマトとチーズにビール。'],['カルパッチョ','white','オリーブオイルと酸味に白。'],['アヒージョ','white','にんにくと油を白の酸味で。'],['ボロネーゼ','red','肉の旨味に赤。'],['生ハム','white','塩気に冷えた白か泡。']],
+  neta:['古代ギリシアやローマでは、ワインを水で割って飲むのが作法で、原酒をそのまま飲むのは野蛮とされた。']},
+ french:{label:'フレンチ',tip:'コースはグラスが替わるたびに記録を。気づくとボトル1本分。',pairs:[['食前（アペリティフ）','white','泡や白で食欲を起こす。'],['白身魚のムニエル','white','バターにシャルドネ。'],['鴨のロースト','red','ピノ・ノワールが定番。'],['牛フィレ','red','渋みのしっかりした赤。'],['食後（ディジェスティフ）','wsk','ウイスキーやブランデーを少量。']],
+  neta:['北大路魯山人はパリのトゥール・ダルジャンで名物の鴨を食べ、ソースが合わないと評して、持参した粉わさびと醤油で食べたと伝わる。','修道士ドン・ペリニヨンは「シャンパンを発明した人」と言われるが、本当に発明者かははっきりしない。']},
+ washoku:{label:'和食',tip:'器を眺めながらゆっくり。ペースが落ちれば量も減る。',pairs:[['先付け','sake','香りの高い薫酒を冷酒で。'],['刺身','sake','軽快な爽酒で素材を活かす。'],['焼き物','sake','旨味の醇酒。'],['煮物','sake','醇酒のぬる燗。'],['天ぷら','hb','衣の油を炭酸で軽く。']],
+  neta:['北大路魯山人は1921年に会員制の「美食倶楽部」を始め、自ら厨房に立つだけでなく器まで自分で作った。1925年には料亭「星岡茶寮」を開いた。','「究極」は、美味しんぼの影響で1986年の新語・流行語大賞（新語部門金賞）になった。']}
+};
+// お酒のタイプ別（日本酒は4タイプ）
+const PAIR={
+ beer:{label:'ビール',styles:[{n:'ピルスナー系',s:'生ビール・缶ビールの多く',f:['唐揚げ','餃子','枝豆','焼き鳥（タレ）'],w:'炭酸と苦味が揚げ物や焼き物の脂を流す。'},{n:'エール・黒ビール',s:'香りやコクが強いもの',f:['ローストビーフ','燻製','ソーセージ'],w:'香ばしさ同士で風味が引き立つ。'}]},
+ whisky:{label:'ハイボール・ウイスキー',styles:[{n:'ハイボール',s:'炭酸割り',f:['唐揚げ','焼き鳥（塩）','餃子'],w:'糖分が少なくキレがあり、脂のある料理と好相性。'},{n:'ロック・ストレート',s:'チェイサー必須',f:['ナッツ','ドライフルーツ','燻製チーズ'],w:'少量の濃い味のものをちびちびと。'}]},
+ sour:{label:'サワー',styles:[{n:'レモンサワー',s:'柑橘系',f:['焼肉','唐揚げ','もつ煮'],w:'「レモンを搾りたくなる料理」全般に。'},{n:'ストロング系',s:'9%前後',f:['冷奴','漬物','サラダ'],w:'1本で日本酒1合分以上。水と一緒に軽いつまみで。'}]},
+ sake:{label:'日本酒',styles:[{n:'薫酒（くんしゅ）',s:'香りが高い・吟醸酒系',f:['白身魚の刺身','魚の塩焼き','天ぷら'],w:'華やかな香りを邪魔しない淡白な料理と。'},{n:'爽酒（そうしゅ）',s:'軽快・本醸造・生酒系',f:['冷奴','白身魚の刺身','おひたし'],w:'素材の味を活かす食中酒向き。'},{n:'醇酒（じゅんしゅ）',s:'コクがある・純米酒系',f:['ぶりの照り焼き','煮物','おでん'],w:'旨味のしっかりした料理と。ぬる燗も。'},{n:'熟酒（じゅくしゅ）',s:'熟成・古酒系',f:['うなぎの蒲焼','麻婆豆腐','熟成チーズ'],w:'濃い味・甘辛・スパイスに負けない。'}]},
+ shochu:{label:'焼酎',styles:[{n:'芋焼酎',s:'香りとコク',f:['豚の角煮','さつま揚げ','鶏の炭火焼'],w:'鹿児島の郷土料理と「地元合わせ」。'},{n:'麦・米焼酎',s:'すっきり',f:['焼き魚','冷奴','天ぷら'],w:'クセが少なく和食全般に。'},{n:'泡盛',s:'沖縄の蒸留酒',f:['ゴーヤチャンプルー','ラフテー'],w:'沖縄料理とセットで。'}]},
+ wine:{label:'ワイン',styles:[{n:'赤ワイン',s:'渋み・コク',f:['ステーキ','すき焼き','レバー'],w:'渋みが肉の脂をさっぱりさせる。'},{n:'白ワイン',s:'酸味・すっきり',f:['白身魚','鶏肉','牡蠣'],w:'酸味が魚介の生臭さを抑える。'},{n:'スパークリング',s:'泡',f:['天ぷら','生ハム','フライ'],w:'泡と酸味で揚げ物が軽くなる。'}]},
+ ume:{label:'梅酒',styles:[{n:'梅酒',s:'甘酸っぱい',f:['生ハム','クリームチーズ','唐揚げ'],w:'塩気や脂に甘酸っぱさが合う。食後酒にも。'}]},
+ china:{label:'紹興酒',styles:[{n:'紹興酒',s:'熟成した黄酒',f:['麻婆豆腐','小籠包','黒酢の酢豚'],w:'常温かぬる燗で。発酵の香りが中華の香辛料と合う。'}]}
+};
+
+// ---------- 状態 ----------
+let st={sizePref:{},customD:[],customF:[],cond:'mid',work:{on:true,time:'07:00'},floatOn:true,entries:[],daily:{},limit:20,mode:'liver',level:2,prof:{sex:'m',age:50,h:170,act:1.75},weights:{},shops:[],cur:{},review:{},sample:false};
+function save(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
+function load(){try{const s=localStorage.getItem(KEY);if(s){st=Object.assign(st,JSON.parse(s));return true}}catch(e){}return false}
+const pad=n=>String(n).padStart(2,'0');
+const dk=d=>{d=new Date(d);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+const fmtG=g=>(Math.round(g*10)/10).toFixed(1);
+const fmtK=k=>Math.round(k).toLocaleString('ja-JP');
+const DAYCUT=5*3600e3; // 飲みの1日は朝5時で区切る
+const dayOf=ts=>dk(+ts-DAYCUT);
+const todayK=()=>dayOf(Date.now());
+const addDays=(k,n)=>{const [y,m,d]=k.split('-').map(Number);return dk(new Date(y,m-1,d+n))};
+const hm=ts=>{const t=new Date(ts);return pad(t.getHours())+':'+pad(t.getMinutes())};
+
+function seed(){
+  let r=20261009;const rnd=()=>{r=(r*1103515245+12345)%2147483648;return r/2147483648};
+  const now=new Date();const E=[];
+  st.shops=[{id:'sh1',name:'とり松（サンプル）',genre:'yakitori'},{id:'sh2',name:'磯の家（サンプル）',genre:'kaisen'},{id:'sh3',name:'龍門（サンプル）',genre:'chuka'},{id:'sh4',name:'家',genre:'ie'},{id:'sh5',name:'のんき屋（サンプル）',genre:'izakaya'}];
+  const favs=['nama','nama','hb','hb','sake','rock','sour','red','mizu','hoppy'];
+  const fav2=['edamame','yakitori','karaage','sashimi','gyoza','potesara','motsuni','yakko','dashimaki','ramen'];
+  const id=()=>'s'+Math.floor(rnd()*1e9).toString(36);
+  const lt=new Date(Date.now()-DAYCUT);
+  for(let i=45;i>=1;i--){
+    const day=new Date(lt.getFullYear(),lt.getMonth(),lt.getDate()-i),dow=day.getDay();
+    let t=new Date(day);t.setHours(12,10);
+    E.push({id:id(),kind:'food',ts:t.getTime(),name:'朝・昼ごはん',kcal:1100,sample:true});
+    const k=dk(day);st.daily[k]={water:Math.floor(rnd()*4),pee:Math.floor(rnd()*3),poo:rnd()<.5?1:0,vomit:0};
+    if(rnd()<(dow===1||dow===3?0.55:0.2)){t=new Date(day);t.setHours(19,0);E.push({id:id(),kind:'food',ts:t.getTime(),name:'夕ごはん',kcal:750,sample:true});continue}
+    const sh=st.shops[Math.floor(rnd()*st.shops.length)].id;
+    const n=1+Math.floor(rnd()*(dow===5||dow===6?5:3));
+    t=new Date(day);t.setHours(18,40+Math.floor(rnd()*40));
+    for(let j=0;j<n;j++){const d=byId[favs[Math.floor(rnd()*favs.length)]];
+      E.push({id:id(),kind:'drink',ts:t.getTime(),did:d.id,name:d.name,g:gOf(d.ml,d.abv),shop:sh,sample:true});
+      if(j<3){const f=fById[fav2[Math.floor(rnd()*fav2.length)]];E.push({id:id(),kind:'food',ts:t.getTime()+60000,fid:f.id,name:f.name,kcal:f.kcal,shop:sh,sample:true})}
+      t=new Date(t.getTime()+(25+rnd()*35)*60000);}
+    st.daily[k].pee+=n>2?2:1;
+  }
+  const ld=new Date(Date.now()-DAYCUT);const T=(h,m)=>new Date(ld.getFullYear(),ld.getMonth(),ld.getDate(),h,m).getTime();
+  const tk=todayK();
+  [[12,0,'food',null,'朝・昼ごはん',1100],[19,10,'drink','nama'],[19,12,'food','edamame'],[19,30,'food','yakitori'],[19,55,'drink','hb']].forEach(([h,m,kind,x,nm,kc])=>{
+    if(T(h,m)>Date.now())return;
+    if(kind==='drink'){const d=byId[x];E.push({id:id(),kind,ts:T(h,m),did:x,name:d.name,g:gOf(d.ml,d.abv),shop:h>17?'sh1':null,sample:true})}
+    else if(x){const f=fById[x];E.push({id:id(),kind,ts:T(h,m),fid:x,name:f.name,kcal:f.kcal,shop:'sh1',sample:true})}
+    else E.push({id:id(),kind,ts:T(h,m),name:nm,kcal:kc,sample:true});
+  });
+  if(T(19,10)<Date.now())st.cur={k:tk,shop:'sh1'};
+  st.daily[tk]={water:1,pee:1,poo:0,vomit:0};
+  st.entries=E;st.sample=true;
+  // 体重（飲み食いと連動するサンプル）
+  let trend=0;const base=70.5;
+  for(let i=45;i>=0;i--){
+    const k=addDays(todayK(),-i);const prev=addDays(k,-1);
+    const alc=daySumG(prev),kc=dayKcal(prev);
+    trend=trend*0.96+(kc-targetKcal())/7200;
+    const w=base+trend+alc*0.008+(rnd()-.5)*0.25;
+    st.weights[k]=Math.round(w*10)/10;
+  }
+}
+
+// ---------- 集計 ----------
+const dayAll=k=>st.entries.filter(e=>dayOf(e.ts)===k).sort((a,b)=>a.ts-b.ts);
+const dayDrinks=k=>dayAll(k).filter(e=>e.kind==='drink');
+const dayFoods=k=>dayAll(k).filter(e=>e.kind==='food');
+function daySumG(k){return dayDrinks(k).reduce((s,e)=>s+e.g,0)}
+function dayFoodKcal(k){return dayFoods(k).reduce((s,e)=>s+e.kcal,0)}
+function dayKcal(k){return dayFoodKcal(k)+daySumG(k)*7}
+function latestWeight(){const ks=Object.keys(st.weights).sort();return ks.length?st.weights[ks[ks.length-1]]:65}
+function targetKcal(){const p=st.prof,w=latestWeight();const bmr=10*w+6.25*p.h-5*p.age+(p.sex==='m'?5:-161);return Math.round(bmr*p.act/10)*10}
+function lvLiver(g){const L=st.limit;if(g===0)return 0;if(g<L)return 1;if(g<L*2)return 2;return 3}
+function lvSto(k,t){const r=k/t;if(r<.3)return 0;if(r<.65)return 1;if(r<1)return 2;if(r<1.3)return 3;return 4}
+const COND={good:[1,'良い'],mid:[0.9,'普通'],bad:[0.75,'悪い']};
+function alcRate(){return latestWeight()*0.1*(COND[st.cond]||COND.mid)[0]}
+function remainAlc(at){const rate=alcRate();const es=st.entries.filter(e=>e.kind==='drink'&&e.ts<=at&&at-e.ts<48*3600e3).sort((a,b)=>a.ts-b.ts);
+  let rem=0,prev=null;for(const e of es){if(prev!=null)rem=Math.max(0,rem-rate*(e.ts-prev)/3600e3);rem+=e.g;prev=e.ts}
+  if(prev!=null)rem=Math.max(0,rem-rate*(at-prev)/3600e3);return {rem,rate}}
+
+function clearInfo(){const now=Date.now(),{rem,rate}=remainAlc(now);const h=rem>0.05?rem/rate:0;return {rem,rate,h,at:new Date(now+h*3600e3)}}
+function workAt(){if(!st.work||!st.work.on||!st.work.time)return null;const [hh,mm]=st.work.time.split(':').map(Number);const d=new Date();d.setHours(hh,mm,0,0);if(d.getTime()<=Date.now())d.setDate(d.getDate()+1);return d}
+const fmtT=d=>`${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const dayLbl=d=>{const t=new Date();t.setHours(0,0,0,0);const x=new Date(d);x.setHours(0,0,0,0);const diff=Math.round((x-t)/864e5);return diff===0?'きょう':diff===1?'あした':`${d.getMonth()+1}/${d.getDate()}`};
+function workBudget(){const w=workAt();if(!w)return null;const {rem,rate}=clearInfo();const hrs=(w.getTime()-3600e3-Date.now())/3600e3;return {w,left:rate*hrs-rem}}
+function renderStatus(){
+  const k=todayK(),g=daySumG(k),lv=lvLiver(g),c=clearInfo(),wb=workBudget(),tk=dayKcal(k),T=targetKcal();
+  $('fLiver').innerHTML=liverSVG(lv);$('fG').textContent=fmtG(g)+'g';
+  const ng=wb&&wb.left<0;
+  $('fGp').textContent=ng?'仕事に残る！':(c.h>0?`${fmtT(c.at)}に抜ける`:`${Math.round(g/st.limit*100)}%`);
+  $('fGp').classList.toggle('ng',!!ng);
+  $('fSto').innerHTML=stoSVG(lvSto(tk,T));$('fK').textContent=fmtK(tk)+'kcal';$('fKp').textContent=Math.round(tk/T*100)+'%';
+  updateFloat();
+}
+let heroVisible=true;
+function updateFloat(){$('float').classList.toggle('off',!st.floatOn||(heroVisible&&!$('tab-today').hidden))}
+const daily=k=>st.daily[k]||(st.daily[k]={water:0,pee:0,poo:0,vomit:0});
+
+const FIRST=!load();
+function registerCustom(){
+  (st.customD||[]).forEach(c=>{if(byId[c.id])return;const d={id:c.id,name:c.name,cat:c.cat||'other',ml:c.ml,abv:c.abv,ic:'tall',note:c.note,custom:true};DRINKS.push(d);byId[c.id]=d;INFO[c.id]=c.info||{1:[],2:[],3:[],4:[],5:[]}});
+  (st.customF||[]).forEach(c=>{if(fById[c.id])return;const f={id:c.id,name:c.name,kcal:c.kcal,ic:'plate',note:c.note,custom:true};FOODS.push(f);fById[c.id]=f;FINFO[c.id]=c.info||{1:[],2:[],3:[],4:[],5:[]}});
+}
+registerCustom();
+
+// ---------- 共通UI ----------
+const $=id=>document.getElementById(id);
+let toastT,undoFn=null;
+function toast(msg,undo){$('toastMsg').textContent=msg;undoFn=undo||null;$('toastUndo').hidden=!undo;
+  $('toast').classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('on'),undo?4000:1800)}
+$('toastUndo').onclick=()=>{if(undoFn)undoFn();undoFn=null;$('toast').classList.remove('on')};
+const curShop=()=>st.cur&&st.cur.k===todayK()?st.shops.find(s=>s.id===st.cur.shop):null;
+function bounce(){const sv=$('heroSvg');sv.classList.remove('bounce');void sv.offsetWidth;sv.classList.add('bounce')}
+
+function addDrink(d,opt={}){
+  const sh=curShop();let g=d.g,name=d.name,size=null;
+  if(g==null){const sp=spec(d,opt.size);g=gOf(sp.ml,sp.abv);size=sp.label;if(size)name=`${d.name}（${size}）`}
+  const e={id:'e'+Date.now()+Math.random().toString(36).slice(2,6),kind:'drink',ts:Date.now(),did:d.id||null,name,size,g,approx:!!opt.approx,shop:sh?sh.id:null};
+  st.entries.push(e);save();renderToday();bounce();
+  if(e.did&&!opt.silent){openSheet(e.did,e)}
+  else toast(`記録しました（+${fmtG(e.g)}g）`,()=>{st.entries=st.entries.filter(x=>x.id!==e.id);save();renderToday()});
+}
+function addFood(f,opt={}){
+  const sh=curShop();
+  const e={id:'e'+Date.now()+Math.random().toString(36).slice(2,6),kind:'food',ts:Date.now(),fid:f.id||null,name:f.name,kcal:f.kcal,approx:!!opt.approx,shop:sh?sh.id:null};
+  st.entries.push(e);save();renderToday();bounce();
+  if(e.fid&&!opt.silent){openSheet(e.fid,e,'food');return}
+  const late=false;
+  toast(late?'夜ふけのラーメン…ストマッくん、がんばれ':`いただきます +${fmtK(e.kcal)}kcal`,()=>{st.entries=st.entries.filter(x=>x.id!==e.id);save();renderToday()});
+}
+
+// ---------- キャラクター ----------
+function liverSVG(lv){
+  const fill=['#e07a6e','#d9786a','#d6a04a','#8e7b62'][lv];
+  const eyes=lv===3?'<path d="M62 52l10 10M72 52l-10 10M104 52l10 10M114 52l-10 10" stroke="#2a1a14" stroke-width="3.5" stroke-linecap="round"/>'
+   :lv===2?'<path d="M60 58q7-6 14 0M102 58q7-6 14 0" stroke="#2a1a14" stroke-width="3.5" fill="none" stroke-linecap="round"/>'
+   :'<circle cx="67" cy="57" r="5" fill="#2a1a14"/><circle cx="109" cy="57" r="5" fill="#2a1a14"/><circle cx="69" cy="55" r="1.6" fill="#fff"/><circle cx="111" cy="55" r="1.6" fill="#fff"/>';
+  const mouth=['<path d="M76 70q12 14 24 0" stroke="#2a1a14" stroke-width="3.5" fill="#7a2a22" stroke-linejoin="round"/>','<path d="M78 72q10 8 20 0" stroke="#2a1a14" stroke-width="3.5" fill="none" stroke-linecap="round"/>','<path d="M78 76q10-6 20 0" stroke="#2a1a14" stroke-width="3.5" fill="none" stroke-linecap="round"/>','<path d="M76 74q4-5 8 0t8 0t8 0" stroke="#2a1a14" stroke-width="3.5" fill="none" stroke-linecap="round"/>'][lv];
+  const extra=lv>=2?'<path d="M140 30q6 10 0 14q-6-4 0-14z" fill="#7fc3ea"/>':'';
+  const cheek=lv<2?'<ellipse cx="54" cy="70" rx="8" ry="4.5" fill="#f2a59a" opacity=".8"/><ellipse cx="122" cy="70" rx="8" ry="4.5" fill="#f2a59a" opacity=".8"/>':'';
+  return `<path d="M18 62C14 34 56 16 106 18c40 2 64 18 56 40-8 24-44 44-86 44C42 102 21 86 18 62z" fill="${fill}"/><path d="M106 18c-6 18-6 44 2 76" stroke="rgba(0,0,0,.14)" stroke-width="3" fill="none"/>${cheek}${eyes}${mouth}${extra}`;
+}
+function stoSVG(lv){
+  const s=[.8,.92,1.04,1.16,1.3][lv],sy=[.82,.92,1.02,1.1,1.18][lv];
+  const fill=['#f3b2a8','#f0a49a','#ec958b','#e5837a','#dc6f68'][lv];
+  const eyes=lv>=4?'<path d="M-14 -6l8 6M-6 -6l-8 6M10 -6l8 6M18 -6l-8 6" stroke="#2a1a14" stroke-width="3" stroke-linecap="round"/>'
+   :lv===3?'<path d="M-16 -2q6-6 12 0M8 -2q6-6 12 0" stroke="#2a1a14" stroke-width="3" fill="none" stroke-linecap="round"/>'
+   :'<circle cx="-10" cy="-2" r="4" fill="#2a1a14"/><circle cx="14" cy="-2" r="4" fill="#2a1a14"/><circle cx="-8.6" cy="-3.6" r="1.3" fill="#fff"/><circle cx="15.4" cy="-3.6" r="1.3" fill="#fff"/>';
+  const mouth=['<ellipse cx="2" cy="12" rx="5" ry="3" fill="#7a2a22"/>','<path d="M-6 10q8 8 16 0" stroke="#2a1a14" stroke-width="3" fill="none" stroke-linecap="round"/>','<path d="M-8 10q10 10 20 0" stroke="#2a1a14" stroke-width="3" fill="#7a2a22"/>','<path d="M-6 14q8-6 16 0" stroke="#2a1a14" stroke-width="3" fill="none" stroke-linecap="round"/>','<path d="M-8 12h20" stroke="#2a1a14" stroke-width="3" stroke-linecap="round"/><path d="M-4 12v4M2 12v4M8 12v4" stroke="#2a1a14" stroke-width="2"/>'][lv];
+  const extra=lv>=3?'<path d="M150 22q6 10 0 14q-6-4 0-14z" fill="#7fc3ea"/>'+(lv>=4?'<path d="M148 52l12-4M150 64l12 2M30 40l-10-6" stroke="#dc6f68" stroke-width="3" stroke-linecap="round"/>':''):'';
+  const growl=lv===0?'<text x="132" y="30" font-size="14" font-weight="700" fill="#b9a2d8" font-family="sans-serif">ぐぅ</text>':'';
+  return `<g transform="translate(92 70) scale(${s} ${sy})"><path d="M-30 -58C-30 -44 -28 -34 -34 -22C-48 6 -38 40 2 42C42 44 62 16 54 -10C48 -30 30 -32 20 -20C12 -10 2 -14 -6 -26C-12 -36 -12 -48 -12 -58Z" fill="${fill}"/><path d="M48 18q14 6 12 22" stroke="${fill}" stroke-width="10" fill="none" stroke-linecap="round"/>${eyes}${mouth}${lv<3?'<ellipse cx="-20" cy="10" rx="6" ry="3.5" fill="#fff" opacity=".35"/><ellipse cx="26" cy="10" rx="6" ry="3.5" fill="#fff" opacity=".35"/>':''}</g>${extra}${growl}`;
+}
+const SAY_L=['きょうは休肝日。カンゾウさん、ご機嫌です','いいペース。このへんで楽しもう','目安オーバー。お水をはさんで','もう限界〜。きょうはおしまい！'];
+const SAY_S=['ぐぅ…空っぽ。飲む前に何かお腹に','いい感じの腹ぐあい','そろそろ腹八分目','ちょっと苦しい…きょうの目安オーバー','はち切れそう！締めは明日にしよう'];
+
+// ---------- きょう ----------
+function renderToday(){
+  const k=todayK(),L=st.limit,sumG=daySumG(k),fk=dayFoodKcal(k),tk=dayKcal(k),T=targetKcal();
+  const lvl=lvLiver(sumG),lvs=lvSto(tk,T);
+  $('sampleBar').hidden=!st.entries.some(e=>e.sample);
+  document.querySelectorAll('#modeSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.m===st.mode));
+  const hero=$('hero'),liver=st.mode==='liver';
+  $('heroSvg').setAttribute('viewBox',liver?'0 0 180 120':'0 0 180 130');
+  if(liver){
+    hero.className='card hero lv'+lvl;$('heroSvg').innerHTML=liverSVG(lvl);
+    $('heroWho').textContent='カンゾウさん';
+    $('heroTotal').innerHTML=fmtG(sumG)+'<small>g</small>';
+    $('heroSub').textContent=`純アルコール・${(sumG/10).toFixed(1)}ドリンク（10g＝1）`;
+    $('heroSay').textContent=SAY_L[lvl];
+    const max=Math.max(L*3,sumG*1.05);$('heroBar').style.width=Math.min(100,sumG/max*100)+'%';
+    $('heroTicks').innerHTML=[L,L*2].map(v=>`<span style="left:${v/max*100}%">${v}g</span>`).join('');
+    const meta=[];
+    meta.push(`<span class="pill num">${Math.round(sumG/L*100)}%（目安${L}g）</span>`);
+    $('heroMeta').innerHTML=meta.join('');
+  }else{
+    hero.className='card hero lv'+Math.min(4,lvs);$('heroSvg').innerHTML=stoSVG(lvs);
+    $('heroWho').textContent='ストマッくん';
+    $('heroTotal').innerHTML=fmtK(tk)+'<small>kcal</small>';
+    $('heroSub').textContent=`食べ物 ${fmtK(fk)}＋お酒 ${fmtK(sumG*7)}kcal`;
+    $('heroSay').textContent=SAY_S[lvs];
+    const max=Math.max(T*1.5,tk*1.05);$('heroBar').style.width=Math.min(100,tk/max*100)+'%';
+    $('heroTicks').innerHTML=`<span style="left:${T/max*100}%">目安 ${fmtK(T)}</span>`;
+    $('heroMeta').innerHTML=`<span class="pill num">${Math.round(tk/T*100)}%</span>`;
+  }
+  renderStatus();
+  document.querySelectorAll('#condSeg button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.c===st.cond));
+  document.querySelectorAll('#workSeg button').forEach(x=>x.setAttribute('aria-pressed',(x.dataset.w==='on')===!!st.work.on));
+  if(document.activeElement!==$('cW'))$('cW').value=latestWeight().toFixed(1);
+  $('workTime').value=st.work.time;$('workTime').disabled=!st.work.on;
+  $('rateTxt').textContent=`分解の速さ 約${alcRate().toFixed(1)}g/時`;
+  {const c=clearInfo(),wb=workBudget();let h='';
+   h+=c.h>0?`いまのアルコールが抜けるのは <b class="num">${dayLbl(c.at)} ${fmtT(c.at)}ごろ</b>（あと約${c.h.toFixed(1)}時間）。`:'いま体内のアルコールはほぼゼロ。';
+   if(wb){if(wb.left<0)h+=`<br><b style="color:var(--bad)">あしたの仕事（${fmtT(wb.w)}）に残る計算です。きょうはもう飲まないで。</b>`;
+     else{const n=Math.floor(wb.left/gOf(350,5));h+=`<br>仕事（${fmtT(wb.w)}）の1時間前に抜けるには、ここから <b class="num">約${Math.floor(wb.left)}g</b> が上限（${n>0?`生中なら${n}杯分`:'生中1杯も入りません'}）。1日の目安とは別の、超えてはいけない線です。`}}
+   $('budget').innerHTML=h;}
+  // 警告
+  const A=[],dly=daily(k);
+  if(lvl===3)A.push(['bad','飲みすぎ注意',`目安の2倍（${L*2}g）を超えました。ここからはお水にしましょう。`]);
+  else if(lvl===2)A.push(['warn','目安オーバー',`1日の目安 ${L}g を超えました。次の1杯の前にお水を1杯。`]);
+  const dr=dayDrinks(k),hr=dr.filter(e=>Date.now()-e.ts<60*60000),hrG=hr.reduce((s,e)=>s+e.g,0);
+  if(hr.length>=3||hrG>=30)A.push(['warn','ペース速め',`この1時間で ${hr.length}杯・${fmtG(hrG)}g。少しゆっくり。`]);
+  if(dly.vomit>0)A.push(['bad','体調に注意','きょうはもう飲まないで。水を少しずつ。何度も続く、意識がもうろうとする、呼びかけに反応が鈍いときは迷わず周りの人や救急に助けを。']);
+  {const c=clearInfo(),wb=workBudget();
+   if(wb&&wb.left<0)A.unshift(['bad','もうこれ以上はダメ',`あしたの仕事は${fmtT(wb.w)}。いまのお酒が抜けるのは${dayLbl(c.at)} ${fmtT(c.at)}ごろの計算で、仕事に残ります。ここからは水だけに。`]);
+   else if(!wb&&c.h>0){const six=new Date();six.setHours(30,0,0,0);if(c.at>six)A.push(['warn','翌朝まで残るかも',`計算上、抜けるのは${dayLbl(c.at)} ${fmtT(c.at)}ごろ。朝に運転の予定があるなら要注意。`])}}
+  const rest7=[...Array(7)].map((_,i)=>daySumG(addDays(k,-(i+1)))).filter(g=>g===0).length;
+  if(lvl<=1&&rest7===0)A.push(['warn','休肝日がありません','この7日間、毎日飲んでいます。週2日は休ませてあげて。']);
+  if(lvl===0)A.push(['ok','休肝日キープ中',`この7日間の休肝日：${rest7}日`]);
+  if(lvs>=3)A.push([lvs>=4?'bad':'warn','ストマッくんが苦しそう',`きょうの摂取は目安の${Math.round(tk/T*100)}%。`]);
+  $('alerts').innerHTML=A.map(a=>`<div class="alert ${a[0]}"><b>${a[1]}</b><span>${a[2]}</span></div>`).join('');
+  // 振り返り
+  const yk=addDays(k,-1);
+  if(daySumG(yk)>0&&!st.review[yk]){$('reviewCard').hidden=false;
+    $('reviewChips').innerHTML=['寝落ちした','記憶があいまい','二日酔い','問題なし'].map(t=>`<button class="chip" data-r="${t}">${t}</button>`).join('')}
+  else $('reviewCard').hidden=true;
+  // おかわり
+  const src=liver?dr.filter(e=>e.did):dayFoods(k).filter(e=>e.fid);
+  const grp={},nm={};src.forEach(e=>{const key=(e.did||e.fid)+'|'+(e.size||'');grp[key]=(grp[key]||0)+1;nm[key]=e.name});
+  const keys=Object.keys(grp).filter(k=>byId[k.split('|')[0]]||fById[k.split('|')[0]]);$('okCard').hidden=!keys.length;
+  $('okawari').innerHTML=keys.map(k=>`<button class="ok-chip" data-ok="${k}">${nm[k]}<span class="num">×${grp[k]} ＋1</span></button>`).join('');
+  // スタンプ
+  $('stampTitle').textContent='頼んだ！';
+  $('stampSub').textContent='頼んだ時にタップ → 豆知識が開く';
+  $('stamps').innerHTML=liver?DRINKS.map(d=>`<button class="stamp" data-d="${d.id}"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${ICON[d.ic]}</svg><span class="nm">${d.name}${d.custom?'<span class="tag">追加</span>':''}</span><span class="sp num">${specTxt(d,spec(d))}</span></button>`).join('')
+   :FOODS.map(f=>`<button class="stamp" data-f="${f.id}"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${ICON[f.ic]}</svg><span class="nm">${f.name}${f.custom?'<span class="tag">追加</span>':''}</span><span class="sp num">${f.note?f.note+'・':''}約${f.kcal}kcal</span></button>`).join('');
+  renderAiCard();
+  // ざっくり
+  $('fuzzyTitle').textContent=liver?'何杯か覚えてない…':'何を食べたか覚えてない…';
+  $('fuzzySub').textContent=liver?'記録しそびれた分を、酔い具合でざっくり足します':'お腹のふくれ具合でざっくり足します';
+  $('fuzzy').innerHTML=(liver?[['ほろ酔い',20,'g'],['いい感じ',40,'g'],['ベロベロ',60,'g']]:[['腹五分',400,'kcal'],['腹八分',700,'kcal'],['はち切れそう',1100,'kcal']]).map(x=>`<button class="fz" data-v="${x[1]}" data-n="${x[0]}">${x[0]}<span>約${x[1]}${x[2]}</span></button>`).join('');
+  renderShop();renderCounters();renderNeta();
+  // ログ
+  const all=dayAll(k);$('logCount').textContent=all.length?`${all.length}件`:'';
+  $('log').innerHTML=all.length?all.slice().reverse().map(e=>{const d=e.kind==='drink';
+    return `<li><span class="t num">${hm(e.ts)}</span><span class="k ${d?'d':'f'}">${d?'酒':'食'}</span><button class="nmb" ${d&&e.did?`data-info="${e.did}"`:(!d&&e.fid?`data-finfo="${e.fid}"`:'disabled')}>${e.name}${e.approx?'<span class="tag">概算</span>':''}${e.sample?'<span class="tag">サンプル</span>':''}</button><span class="g num">${e.approx?'≈':''}${d?fmtG(e.g)+'g':fmtK(e.kcal)+'kcal'}</span><button class="x" data-del="${e.id}" aria-label="${e.name}を削除">×</button></li>`}).join('')
+   :'<li style="grid-template-columns:1fr"><span class="sub">まだ記録がありません。上のボタンから記録できます。</span></li>';
+}
+function renderShop(){
+  const sh=curShop();
+  if(sh&&!shopEdit){$('shopCard').innerHTML=`<div class="row between"><h2>いまのお店</h2><span class="sub">${GENRES[sh.genre].label}</span></div><div class="shopnow" style="margin-top:6px"><b>${sh.name}</b><button class="btn ghost" id="shopChange">変更</button></div><div class="sub" style="margin-top:6px">ここで記録した分はお店ログに残ります。ペアリングもこのお店のタイプで出ます。</div>`;return}
+  const recent=st.shops.slice(-6).reverse();
+  $('shopCard').innerHTML=`<h2>どこで飲んでる？</h2>
+   ${recent.length?`<div class="sub" style="margin-top:6px">最近のお店</div><div class="chips" style="margin-top:6px">${recent.map(s=>`<button class="chip" data-shop="${s.id}">${s.name}</button>`).join('')}</div>`:''}
+   <div class="sub" style="margin-top:10px">新しいお店</div>
+   <input type="text" id="shopName" placeholder="お店の名前" style="margin-top:6px">
+   <div class="chips" id="shopGenre" style="margin-top:8px">${Object.entries(GENRES).map(([g,v])=>`<button class="chip" data-g="${g}" aria-pressed="${g===newGenre}">${v.label}</button>`).join('')}</div>
+   <div class="row" style="margin-top:10px"><button class="btn" id="shopSave">このお店にする</button>${sh?'<button class="btn ghost" id="shopCancel">やめる</button>':''}</div>`;
+}
+let shopEdit=false,newGenre='izakaya';
+$('shopCard').onclick=e=>{
+  if(e.target.closest('#shopChange')){shopEdit=true;renderShop();return}
+  if(e.target.closest('#shopCancel')){shopEdit=false;renderShop();return}
+  const g=e.target.closest('[data-g]');if(g){newGenre=g.dataset.g;document.querySelectorAll('#shopGenre .chip').forEach(c=>c.setAttribute('aria-pressed',c.dataset.g===newGenre));return}
+  const s=e.target.closest('[data-shop]');if(s){st.cur={k:todayK(),shop:s.dataset.shop};shopEdit=false;save();renderToday();toast(`${st.shops.find(x=>x.id===s.dataset.shop).name}で乾杯`);return}
+  if(e.target.closest('#shopSave')){const nm=($('shopName').value||'').trim()||GENRES[newGenre].label;
+    let ex=st.shops.find(x=>x.name===nm);if(!ex){ex={id:'sh'+Date.now(),name:nm,genre:newGenre};st.shops.push(ex)}
+    st.cur={k:todayK(),shop:ex.id};shopEdit=false;save();renderToday();toast(`${nm}で乾杯`)}
+};
+function renderCounters(){
+  const d=daily(todayK());
+  const C=[['water','水',d.water],['pee','小',d.pee],['poo','大',d.poo],['vomit','戻',d.vomit]];
+  $('memoSum').textContent=`水${d.water}`;
+  $('counters').innerHTML=C.map(c=>`<div class="ctr"><span class="lbl">${c[1]}</span><span class="n num">${c[2]}</span><div class="bt"><button data-c="${c[0]}" data-v="-1" aria-label="${c[1]}を1減らす">−</button><button class="plus" data-c="${c[0]}" data-v="1">＋1</button></div></div>`).join('');
+  const diff=d.pee-d.water;
+  $('ctrHint').innerHTML=(diff>0?`<b>水分補給を：</b>水をあと${diff}杯。<br>`:'')+'「小」が増えるのはお酒で水分が抜けているサイン。アルコール自体はほとんど減らないので、摂取量からは引きません。';
+}
+$('counters').onclick=e=>{const b=e.target.closest('[data-c]');if(!b)return;const d=daily(todayK());d[b.dataset.c]=Math.max(0,d[b.dataset.c]+ +b.dataset.v);save();renderToday();
+  if(b.dataset.v==='1'){const m={water:`水 ${d.water}杯目。えらい！`,pee:'メモしました',poo:'メモしました',vomit:'きょうはここまで。水を少しずつ'};toast(m[b.dataset.c])}};
+let netaIdx=0;
+function netaPool(){
+  const sh=curShop(),pool=[];
+  const last=dayDrinks(todayK()).filter(e=>e.did).pop();
+  if(last){const I=INFO[last.did]||{};[3,4].forEach(l=>(I[l]||[]).forEach(t=>pool.push([t,`${last.name}の豆知識`])))}
+  const lf=dayFoods(todayK()).filter(e=>e.fid).pop();
+  if(lf)[3,4].forEach(l=>((FINFO[lf.fid]||{})[l]||[]).forEach(t=>pool.push([t,`${lf.name}の豆知識`])));
+  if(sh&&GENRES[sh.genre].neta.length)GENRES[sh.genre].neta.forEach(t=>pool.push([t,`${GENRES[sh.genre].label}の一ネタ`]));
+  if(!pool.length)['sake','hb','nama'].forEach(id=>INFO[id][4].forEach(t=>pool.push([t,`${byId[id].name}の豆知識`])));
+  return pool;
+}
+function renderNeta(){const p=netaPool();const x=p[netaIdx%p.length];$('neta').textContent=x[0];$('netaSrc').textContent=x[1]}
+$('netaNext').onclick=()=>{netaIdx++;renderNeta()};
+
+$('modeSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;st.mode=b.dataset.m;save();renderToday()};
+$('stamps').onclick=e=>{const b=e.target.closest('.stamp');if(!b)return;b.classList.remove('pop');void b.offsetWidth;b.classList.add('pop');
+  if(b.dataset.d)addDrink(byId[b.dataset.d]);else addFood(fById[b.dataset.f])};
+$('okawari').onclick=e=>{const b=e.target.closest('[data-ok]');if(!b)return;const [id,size]=b.dataset.ok.split('|');if(st.mode==='liver')addDrink(byId[id],{size:size||null});else addFood(fById[id])};
+$('fuzzy').onclick=e=>{const b=e.target.closest('.fz');if(!b)return;
+  if(st.mode==='liver')addDrink({name:b.dataset.n+'（覚えてない分）',g:+b.dataset.v},{approx:true});
+  else addFood({name:b.dataset.n+'（覚えてない分）',kcal:+b.dataset.v},{approx:true})};
+$('log').onclick=e=>{const i=e.target.closest('[data-info]');if(i){openSheet(i.dataset.info);return}
+  const fi=e.target.closest('[data-finfo]');if(fi){openSheet(fi.dataset.finfo,null,'food');return}
+  const b=e.target.closest('[data-del]');if(!b)return;const ent=st.entries.find(x=>x.id===b.dataset.del);
+  st.entries=st.entries.filter(x=>x.id!==b.dataset.del);save();renderToday();toast(`${ent.name}を削除しました`,()=>{st.entries.push(ent);save();renderToday()})};
+$('reviewChips').onclick=e=>{const b=e.target.closest('[data-r]');if(!b)return;st.review[addDays(todayK(),-1)]=b.dataset.r;save();renderToday();toast('振り返りを記録しました')};
+$('clearSample').onclick=()=>{st.entries=st.entries.filter(e=>!e.sample);st.shops=st.shops.filter(s=>!/サンプル/.test(s.name));st.weights={};st.daily={};st.review={};st.cur={};st.sample=false;save();renderAll();toast('サンプルを消しました')};
+
+// 分解ステータス（常時表示・消せる）
+$('float').onclick=()=>{const t=document.querySelector('nav.tabs [data-tab="today"]');if($('tab-today').hidden)t.click();window.scrollTo({top:0,behavior:'smooth'})};
+$('condSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;st.cond=b.dataset.c;save();renderToday();toast(`体調「${COND[st.cond][1]}」で計算し直しました`)};
+$('workSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;st.work.on=b.dataset.w==='on';save();renderToday()};
+$('workTime').onchange=()=>{if($('workTime').value){st.work.time=$('workTime').value;save();renderToday()}};
+setInterval(()=>{renderStatus()},60000);
+
+
+// ---------- メニューにない品の追加（手入力） ----------
+let SAMPLE=null,IMG_OK=false;
+// 公開版ではAI判定を使わない（手入力で追加）
+const CATS='beer|whisky|sour|sake|shochu|wine|ume|china|other';
+function aiPrompt(kind,q){
+  const common='各triviaは日本語60字以内。不確かな事実は断定せず「〜といわれる」と書く。変人は真偽不明の俗説・噂を、真偽不明と分かる書き方で。';
+  return kind==='drink'
+   ?`あなたは日本の居酒屋メニューと酒に詳しい専門家です。次の飲み物について、日本の飲食店で出る標準的な1杯を推定してください:「${q}」\n次のJSONだけを返してください:{"name":"短い日本語名","ml":1杯の量(数値),"abv":アルコール度数%(数値),"kcal":1杯の総カロリー(数値),"cat":"${CATS}のどれか","note":"量の前提を12字以内","trivia":["初級者向け:どんなお酒か","中級者向け:歴史や背景","上級者向け:マニアックな話","達人向け:あまり知られていない話","変人向け:真偽不明の話"]}\nノンアルコールならabvは0。${common}`
+   :`あなたは日本の外食メニューと栄養に詳しい専門家です。次の料理について、日本の飲食店で出る標準的な1人前を推定してください:「${q}」\n次のJSONだけを返してください:{"name":"短い日本語名","kcal":1人前のカロリー(数値),"note":"量の前提を12字以内","trivia":["初級者向け:どんな料理か","中級者向け:歴史や背景","上級者向け:マニアックな話","達人向け:あまり知られていない話","変人向け:真偽不明の話"]}\n${common}`;
+}
+let aiPending=null,aiCtl=null;
+function renderAiCard(){
+  const liver=st.mode==='liver';
+  $('aiTitle').textContent=liver?'メニューにないお酒を追加':'メニューにない料理を追加';
+  $('aiName').placeholder=liver?'例：ハイボール濃いめ、マッコリ、黒ホッピー':'例：ハムカツ、もずく酢、ぶり大根';
+  $('aiBadge').textContent='';
+  $('aiLead').textContent=SAMPLE?(liver?'名前を入れるだけで、AIが量・度数・純アルコール・カロリーと豆知識を作ります。':'名前を入れるだけで、AIがカロリーと豆知識を作ります。'):(liver?'名前・量・度数を入れて追加すると、純アルコールを自動で計算し、次からはボタンで記録できます。':'名前とカロリーを入れて追加すると、次からはボタンで記録できます。');
+  $('aiGo').textContent=SAMPLE?'AIで判定':'追加';
+  $('aiManual').hidden=!!SAMPLE;
+  $('aiManual').style.gridTemplateColumns=liver?'1fr 1fr':'1fr';
+  $('aiManual').innerHTML=liver?'<input type="number" id="mMl" placeholder="量 ml" inputmode="decimal"><input type="number" id="mAbv" placeholder="度数 %" inputmode="decimal">':'<input type="number" id="mKcal" placeholder="kcal" inputmode="numeric">';
+}
+function aiShow(r,kind){
+  aiPending={...r,kind};
+  const dr=kind==='drink',g=dr?gOf(r.ml,r.abv):0;
+  $('aiResult').innerHTML=`<div class="alert ok"><b>${r.name}</b><span class="num">${dr?`${r.ml}ml・${r.abv}%・純アルコール約${fmtG(g)}g・約${Math.round(r.kcal||g*7)}kcal`:`約${Math.round(r.kcal)}kcal`}${r.note?`（${r.note}）`:''}</span></div>
+   <div class="row"><button class="btn" id="aiRec">これで記録</button><button class="btn ghost" id="aiFix">数値を直す</button><button class="btn ghost" id="aiCancel">やめる</button></div>
+   <div class="sub">記録すると「頼んだ！」のボタンに追加され、次からはタップだけで記録できます。</div>`;
+}
+$('aiGo').onclick=async()=>{
+  const q=$('aiName').value.trim(),kind=st.mode==='liver'?'drink':'food';
+  if(!q){toast('名前を入れてください');return}
+  if(!SAMPLE){
+    if(kind==='drink'){const ml=+$('mMl').value,abv=+$('mAbv').value;if(!ml||isNaN(abv)){toast('量と度数を入れてください');return}aiShow({name:q,ml,abv,kcal:gOf(ml,abv)*7,note:'手入力',trivia:[]},kind)}
+    else{const kc=+$('mKcal').value;if(!kc){toast('kcalを入れてください');return}aiShow({name:q,kcal:kc,note:'手入力',trivia:[]},kind)}
+    return}
+  aiCtl&&aiCtl.abort();aiCtl=new AbortController();
+  $('aiGo').disabled=true;$('aiResult').innerHTML='<div class="sub">AIが考えています…（数秒〜数十秒）</div>';
+  try{
+    const r=await SAMPLE.json(aiPrompt(kind,q),{modelTier:'quick',signal:aiCtl.signal});
+    const clean={name:String(r.name||q).slice(0,30),note:String(r.note||'').slice(0,20),trivia:Array.isArray(r.trivia)?r.trivia.map(t=>String(t).slice(0,120)).slice(0,5):[]};
+    if(kind==='drink'){clean.ml=Math.max(1,Math.min(2000,+r.ml||350));clean.abv=Math.max(0,Math.min(70,+r.abv||0));clean.kcal=+r.kcal||gOf(clean.ml,clean.abv)*7;clean.cat=CATS.split('|').includes(r.cat)?r.cat:'other'}
+    else clean.kcal=Math.max(1,Math.min(5000,+r.kcal||300));
+    aiShow(clean,kind);
+  }catch(e){
+    const m={not_granted:'AIの利用が許可されませんでした。数値を手で入れてください。',rate_limited:'混み合っています。少し待ってからもう一度。',invalid_json:'うまく判定できませんでした。もう一度お試しください。',cancelled:''};
+    if(e&&(e.code==='not_granted'||e.code==='sampling_disabled')){SAMPLE=null;renderAiCard()}
+    $('aiResult').innerHTML=`<div class="sub">${m[e&&e.code]??'判定に失敗しました。もう一度お試しください。'}</div>`;
+  }finally{$('aiGo').disabled=false}
+};
+$('aiResult').onclick=e=>{
+  if(e.target.closest('#aiCancel')){aiPending=null;$('aiResult').innerHTML='';return}
+  if(e.target.closest('#aiFix')&&aiPending){const p=aiPending,dr=p.kind==='drink';
+    $('aiResult').innerHTML=`<div class="custom" style="grid-template-columns:${dr?'1fr 1fr':'1fr'};margin-top:0">${dr?`<input type="number" id="fxMl" value="${p.ml}" aria-label="量 ml"><input type="number" id="fxAbv" value="${p.abv}" aria-label="度数 %">`:`<input type="number" id="fxKcal" value="${Math.round(p.kcal)}" aria-label="kcal">`}</div><div class="row"><button class="btn" id="fxOk">この数値にする</button></div>`;return}
+  if(e.target.closest('#fxOk')&&aiPending){const p=aiPending;if(p.kind==='drink'){p.ml=+$('fxMl').value||p.ml;p.abv=+$('fxAbv').value||0;p.kcal=gOf(p.ml,p.abv)*7}else p.kcal=+$('fxKcal').value||p.kcal;aiShow(p,p.kind);return}
+  if(e.target.closest('#aiRec')&&aiPending){const p=aiPending,tv=p.trivia||[];
+    const info={1:tv[0]?[tv[0]]:[],2:tv[1]?[tv[1]]:[],3:tv[2]?[tv[2]]:[],4:tv[3]?[tv[3]]:[],5:tv[4]?[tv[4]]:[]};
+    if(p.kind==='drink'){const c={id:'cd'+Date.now(),name:p.name,ml:p.ml,abv:p.abv,cat:p.cat,note:p.note,info,ai:true};st.customD.push(c);registerCustom();aiPending=null;$('aiResult').innerHTML='';$('aiName').value='';save();addDrink(byId[c.id])}
+    else{const c={id:'cf'+Date.now(),name:p.name,kcal:Math.round(p.kcal),note:p.note,info,ai:true};st.customF.push(c);registerCustom();aiPending=null;$('aiResult').innerHTML='';$('aiName').value='';save();addFood(fById[c.id])}
+  }
+};
+
+// ---------- 豆知識シート ----------
+let shKind='drink',shId=null,shEntry=null,shTab='info',shLv=null;
+function openSheet(id,entry,kind){shKind=kind||'drink';shId=id;shEntry=entry||null;shTab='info';shLv=st.level;renderSheet();$('sheet').hidden=false;document.body.style.overflow='hidden'}
+function closeSheet(){$('sheet').hidden=true;document.body.style.overflow=''}
+function renderSheet(){
+  const dr=shKind==='drink',d=dr?byId[shId]:fById[shId];
+  $('shOrdered').hidden=!shEntry;
+  if(shEntry){let t=`${hm(shEntry.ts)} ${d.name}を記録（+${dr?fmtG(shEntry.g)+'g':fmtK(shEntry.kcal)+'kcal'}）`;let ng=false;
+    if(dr&&shEntry.g>0){const c=clearInfo(),wb=workBudget();t+=`\nこの1杯で、抜けるのは${dayLbl(c.at)} ${fmtT(c.at)}ごろ`;if(wb&&wb.left<0){ng=true;t+=`。仕事（${fmtT(wb.w)}）に残る計算です`}}
+    $('shOrderedTxt').textContent=t;$('shOrdered').classList.toggle('ng',ng)}
+  $('shName').textContent=d.name;$('shSpec').textContent=dr?specTxt(d,spec(d,shEntry&&shEntry.size)):`${d.note?d.note+'・':''}約${d.kcal}kcal`;
+  const szOn=dr&&d.sizes;$('shSize').hidden=!szOn;
+  if(szOn){const cur=spec(d,shEntry&&shEntry.size).label;$('shSize').innerHTML=d.sizes.map(z=>`<button class="chip" data-sz="${z[0]}" aria-pressed="${z[0]===cur}">${z[0]}<span class="sub num" style="margin-left:4px">${z[1]}ml</span></button>`).join('')}
+  document.querySelectorAll('#shTabs button').forEach(b=>{b.setAttribute('aria-pressed',b.dataset.t===shTab);if(b.dataset.t==='brand')b.textContent=dr?'銘柄ずかん':'名産ずかん'});
+  $('shInfo').hidden=shTab!=='info';$('shBrand').hidden=shTab!=='brand';
+  document.querySelectorAll('#shLevel button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.l===shLv));
+  $('shLvName').innerHTML=LVN[shLv]+(shLv===5?' <span class="kijin">真偽不明</span>':'');
+  const I=dr?INFO[shId]:FINFO[shId];
+  const facts=(I&&I[shLv])||[];
+  $('shFacts').innerHTML=facts.length?facts.map(t=>`<li>${t}</li>`).join('')+'':'<li class="sub">このレベルの豆知識はまだありません。</li>';
+  const B=dr?(BRANDS[brandKey(shId)]||[]):(FBRANDS[shId]||[]);
+  $('shBrand').innerHTML=`<div class="sub">記録はせず、読んで楽しむずかんです。</div>`+B.map(b=>`<div class="brand"><b>${b[0]}</b><span>${b[1]}</span></div>`).join('');
+  $('shClose').textContent=dr?'閉じて飲む':'閉じて食べる';
+}
+$('shSize').onclick=e=>{const b=e.target.closest('[data-sz]');if(!b)return;const d=byId[shId],sz=b.dataset.sz;st.sizePref[shId]=sz;
+  if(shEntry){const sp=spec(d,sz);shEntry.size=sz;shEntry.g=gOf(sp.ml,sp.abv);shEntry.name=`${d.name}（${sz}）`}
+  save();renderToday();renderSheet()};
+$('shTabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;shTab=b.dataset.t;renderSheet()};
+$('shLevel').onclick=e=>{const b=e.target.closest('button');if(!b)return;shLv=+b.dataset.l;st.level=shLv;save();renderSheet()};
+$('shClose').onclick=closeSheet;
+$('sheet').onclick=e=>{if(e.target===$('sheet'))closeSheet()};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('sheet').hidden)closeSheet()});
+$('shUndo').onclick=()=>{if(shEntry){st.entries=st.entries.filter(x=>x.id!==shEntry.id);save();renderToday();toast('取り消しました')}closeSheet()};
+
+// ---------- カレンダー ----------
+let calY,calM,selK;
+(function(){const n=new Date();calY=n.getFullYear();calM=n.getMonth();selK=todayK()})();
+function heat(g){const L=st.limit;if(g===0)return'rest';if(g<=L)return'l1';if(g<=L*2)return'l2';if(g<=L*3)return'l3';return'l4'}
+function renderCal(){
+  const now=new Date(),first=new Date(calY,calM,1),days=new Date(calY,calM+1,0).getDate(),tk=todayK();
+  $('calTitle').textContent=`${calY}年${calM+1}月`;
+  let h=['月','火','水','木','金','土','日'].map((d,i)=>`<div class="dow ${i===6?'sun':i===5?'sat':''}">${d}</div>`).join('');
+  const off=(first.getDay()+6)%7;for(let i=0;i<off;i++)h+='<div class="day empty"></div>';
+  let mSum=0,rest=0,drinkDays=0;
+  for(let d=1;d<=days;d++){
+    const dt=new Date(calY,calM,d),k=dk(dt),fut=dt>now&&k!==tk,g=daySumG(k);
+    if(!fut){mSum+=g;if(g===0)rest++;else drinkDays++}
+    h+=`<button class="day ${fut?'future':heat(g)}${k===tk?' today':''}${k===selK?' sel':''}" data-k="${k}" ${fut?'disabled':''}><span class="d num">${d}</span><span class="gg num">${fut?'':g===0?'休':Math.round(g)}</span></button>`;
+  }
+  $('cal').innerHTML=h;
+  const [ty,tm,td]=tk.split('-').map(Number);const mon=addDays(tk,-((new Date(ty,tm-1,td).getDay()+6)%7));let w=0;for(let i=0;i<7;i++)w+=daySumG(addDays(mon,i));
+  $('sWeek').innerHTML=fmtG(w)+'<small>g</small>';
+  $('sMonthK').textContent=(calY===now.getFullYear()&&calM===now.getMonth())?'今月のお酒':`${calM+1}月のお酒`;
+  $('sMonth').innerHTML=fmtG(mSum)+'<small>g</small>';
+  $('sRest').innerHTML=rest+'<small>日</small>';
+  $('sAvg').innerHTML=(drinkDays?fmtG(mSum/drinkDays):'0')+'<small>g</small>';
+  // 詳細
+  const all=dayAll(selK),g=daySumG(selK),kc=dayKcal(selK),[,mm,dd]=selK.split('-'),d=st.daily[selK],shopIds=[...new Set(all.map(e=>e.shop).filter(Boolean))];
+  const shopNames=shopIds.map(id=>(st.shops.find(s=>s.id===id)||{}).name).filter(Boolean);
+  $('dayDetail').innerHTML=`<div class="row between"><h2 class="num">${+mm}月${+dd}日</h2><span class="sub num">${g?fmtG(g)+'g':'休肝日'}・${fmtK(kc)}kcal</span></div>
+   <div class="meta" style="margin-top:6px">${shopNames.map(n=>`<span class="pill">${n}</span>`).join('')}${d?`<span class="pill num">水${d.water}・小${d.pee}・大${d.poo}${d.vomit?'・戻'+d.vomit:''}</span>`:''}${st.weights[selK]?`<span class="pill num">体重 ${st.weights[selK].toFixed(1)}kg</span>`:''}${st.review[selK]?`<span class="pill">${st.review[selK]}</span>`:''}</div>`+
+   (all.length?`<ul class="log">${all.map(e=>{const dr=e.kind==='drink';return `<li style="grid-template-columns:44px 22px 1fr auto"><span class="t num">${hm(e.ts)}</span><span class="k ${dr?'d':'f'}">${dr?'酒':'食'}</span><span>${e.name}${e.approx?'<span class="tag">概算</span>':''}</span><span class="g num">${dr?fmtG(e.g)+'g':fmtK(e.kcal)+'kcal'}</span></li>`}).join('')}</ul>`:'<div class="sub" style="margin-top:6px">記録はありません。</div>');
+  // お店ログ
+  const rows=st.shops.map(s=>{const es=st.entries.filter(e=>e.shop===s.id);const ds=[...new Set(es.map(e=>dayOf(e.ts)))];const gg=es.filter(e=>e.kind==='drink').reduce((a,e)=>a+e.g,0);return {s,n:ds.length,avg:ds.length?gg/ds.length:0,last:ds.sort().pop()}}).filter(r=>r.n).sort((a,b)=>b.n-a.n);
+  $('shopTable').innerHTML=rows.length?`<thead><tr><th>お店</th><th class="r">回数</th><th class="r">平均</th><th class="r">最後</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.s.name}<div class="sub">${GENRES[r.s.genre].label}</div></td><td class="r">${r.n}回</td><td class="r">${fmtG(r.avg)}g</td><td class="r">${r.last.slice(5).replace('-','/')}</td></tr>`).join('')}</tbody>`:'<tbody><tr><td class="sub">まだお店の記録がありません。「きょう」の画面でお店を選ぶと残ります。</td></tr></tbody>';
+}
+$('cal').onclick=e=>{const b=e.target.closest('.day[data-k]');if(!b||b.disabled)return;selK=b.dataset.k;renderCal()};
+$('prevM').onclick=()=>{calM--;if(calM<0){calM=11;calY--}renderCal()};
+$('nextM').onclick=()=>{calM++;if(calM>11){calM=0;calY++}renderCal()};
+
+// ---------- ペアリング ----------
+let genre=null,pairCat=null;
+function renderPair(){
+  const sh=curShop();if(!genre)genre=sh?sh.genre:'izakaya';
+  const last=dayDrinks(todayK()).filter(e=>e.did).pop(),lastCat=last?byId[last.did].cat:null;
+  if(!pairCat)pairCat=PAIR[lastCat]?lastCat:'sake';
+  $('genreChips').innerHTML=Object.entries(GENRES).map(([g,v])=>`<button class="chip" data-g="${g}" aria-pressed="${g===genre}">${v.label}</button>`).join('');
+  const G=GENRES[genre];
+  $('genreBody').innerHTML=`<div class="row between"><h2>${G.label}での取り合わせ</h2>${sh&&sh.genre===genre?'<span class="badge">いまのお店</span>':''}</div><div class="sub" style="margin-top:4px">${G.tip}</div>
+   <div class="pairs">${G.pairs.map(p=>{const d=byId[p[1]],hit=lastCat&&d.cat===lastCat;return `<div class="pair${hit?' hit':''}"><div class="pl">${p[0]}<span class="x">×</span><button class="dr" data-info="${p[1]}">${d.name}</button>${hit?'<span class="badge">いま飲んでる系統</span>':''}</div><div class="why">${p[2]}</div></div>`}).join('')}</div>
+   ${G.neta.length?`<div class="alert ok" style="margin-top:10px"><b>一ネタ</b><span>${G.neta[0]}</span></div>`:''}
+   <div class="sub" style="margin-top:8px">お酒の名前をタップすると豆知識が開きます。</div>`;
+  $('pairChips').innerHTML=Object.entries(PAIR).map(([k,v])=>`<button class="chip" data-c="${k}" aria-pressed="${k===pairCat}">${v.label}</button>`).join('');
+  const P=PAIR[pairCat];
+  $('pairBody').innerHTML=P.styles.map(s=>`<div class="style"><h3>${s.n}<span>${s.s}</span></h3><div class="foods">${s.f.map(x=>`<span class="food">${x}</span>`).join('')}</div><div class="why">${s.w}</div></div>`).join('');
+}
+$('genreChips').onclick=e=>{const b=e.target.closest('[data-g]');if(!b)return;genre=b.dataset.g;renderPair()};
+$('genreBody').onclick=e=>{const b=e.target.closest('[data-info]');if(b)openSheet(b.dataset.info)};
+$('pairChips').onclick=e=>{const b=e.target.closest('[data-c]');if(!b)return;pairCat=b.dataset.c;renderPair()};
+
+// ---------- ツミとバツ ----------
+let selDay=null;
+function renderTsumi(){
+  const tk=todayK(),w=st.weights[tk]??latestWeight();
+  $('wIn').value=w.toFixed(1);
+  const ks=Object.keys(st.weights).sort(),lw=latestWeight(),bmi=lw/((st.prof.h/100)**2);
+  const ago=st.weights[addDays(tk,-30)];
+  const bmiJ=bmi<18.5?'低体重':bmi<25?'普通体重':bmi<30?'肥満（1度）':'肥満（2度以上）';
+  $('tsumiStats').innerHTML=`<div class="stat"><div class="k">最新の体重</div><div class="v num">${lw.toFixed(1)}<small>kg</small></div></div>
+   <div class="stat"><div class="k">BMI</div><div class="v num">${bmi.toFixed(1)}</div><div class="sub">${bmiJ}</div></div>
+   <div class="stat"><div class="k">30日前から</div><div class="v num">${ago!=null?((lw-ago>=0?'+':'')+(lw-ago).toFixed(1)):'—'}<small>kg</small></div></div>
+   <div class="stat"><div class="k">1日の目安</div><div class="v num">${fmtK(targetKcal())}<small>kcal</small></div></div>`;
+  // 罪と罰
+  const grp={drink:[],rest:[],over:[],under:[],big:[]};
+  ks.forEach(k=>{const nk=addDays(k,1);if(st.weights[nk]==null)return;const dlt=st.weights[nk]-st.weights[k];const g=daySumG(k),kc=dayKcal(k);
+    (g>0?grp.drink:grp.rest).push(dlt);(kc>targetKcal()?grp.over:grp.under).push(dlt);if(g>=st.limit*2)grp.big.push(dlt)});
+  const avg=a=>a.length?a.reduce((s,x)=>s+x,0)/a.length:null;
+  const f=v=>v==null?'—':(v>=0?'+':'')+v.toFixed(2)+'kg';
+  const V=[['飲んだ日の翌朝',avg(grp.drink),`${grp.drink.length}回の平均`],['休肝日の翌朝',avg(grp.rest),`${grp.rest.length}回の平均`],[`飲みすぎた日（${st.limit*2}g以上）の翌朝`,avg(grp.big),`${grp.big.length}回の平均`],['食べすぎた日（目安超え）の翌朝',avg(grp.over),`${grp.over.length}回の平均`]];
+  const dd=avg(grp.drink),rr=avg(grp.rest);
+  $('verdicts').innerHTML=V.map(v=>`<div class="verdict"><span>${v[0]}</span><b class="num" style="color:${v[1]>0.05?'var(--bad)':v[1]<-0.05?'var(--ok)':'var(--ink)'}">${f(v[1])}</b><span class="sub">${v[2]}</span></div>`).join('')+
+   (dd!=null&&rr!=null?`<div class="alert ${dd-rr>0.1?'warn':'ok'}" style="margin-top:8px"><b>判決</b><span>${dd-rr>0.1?`飲んだ翌朝は、休肝日の翌朝より平均${(dd-rr).toFixed(2)}kg重い。むくみと食べすぎの合わせ技かも。`:'飲んだ日と休肝日で、翌朝の体重に大きな差はありません。'}</span></div>`:'');
+  // グラフ
+  const days=[...Array(30)].map((_,i)=>addDays(tk,i-29));
+  drawCharts(days);
+}
+function drawCharts(days){
+  const W=340,H=130,pl=34,pr=8,pt=10,pb=22,iw=W-pl-pr,ih=H-pt-pb,n=days.length,bw=iw/n;
+  const ws=days.map(k=>st.weights[k]).filter(v=>v!=null);
+  const ks=days.map(k=>dayKcal(k)),T=targetKcal();
+  const xl=i=>pl+bw*i+bw/2;
+  // 体重
+  let wsvg='';
+  if(ws.length>1){const mn=Math.floor(Math.min(...ws)-0.5),mx=Math.ceil(Math.max(...ws)+0.5),y=v=>pt+ih-(v-mn)/(mx-mn)*ih;
+    const ticks=[mn,(mn+mx)/2,mx];
+    wsvg+=ticks.map(t=>`<line x1="${pl}" x2="${W-pr}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)" stroke-width="1"/><text x="${pl-4}" y="${y(t)+4}" text-anchor="end" font-size="10" fill="var(--muted)">${t.toFixed(1)}</text>`).join('');
+    const pts=days.map((k,i)=>st.weights[k]!=null?[xl(i),y(st.weights[k])]:null).filter(Boolean);
+    wsvg+=`<polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="var(--ai-soft)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    const lp=pts[pts.length-1];wsvg+=`<circle cx="${lp[0]}" cy="${lp[1]}" r="4" fill="var(--ai-soft)" stroke="var(--surface)" stroke-width="2"/>`;
+  }
+  wsvg+=xLabels(days,xl,H);
+  wsvg+=days.map((k,i)=>`<rect x="${pl+bw*i}" y="0" width="${bw}" height="${H}" fill="transparent" data-k="${k}"/>`).join('');
+  $('wChart').innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="30日間の体重">${wsvg}</svg>`;
+  // カロリー
+  const kmx=Math.max(T*1.5,...ks),yk=v=>pt+ih-v/kmx*ih;
+  let ksvg=[0,Math.round(kmx/2/500)*500].map(t=>`<line x1="${pl}" x2="${W-pr}" y1="${yk(t)}" y2="${yk(t)}" stroke="var(--line)" stroke-width="1"/><text x="${pl-4}" y="${yk(t)+4}" text-anchor="end" font-size="10" fill="var(--muted)">${t?fmtK(t):0}</text>`).join('');
+  ksvg+=ks.map((v,i)=>{if(!v)return'';const h=ih-(yk(v)-pt),x=pl+bw*i+1,w=Math.max(2,bw-2),r=Math.min(3,w/2);const y0=yk(v);
+    return `<path d="M${x},${pt+ih}V${y0+r}Q${x},${y0} ${x+r},${y0}H${x+w-r}Q${x+w},${y0} ${x+w},${y0+r}V${pt+ih}Z" fill="var(--amber)" opacity="${days[i]===selDay?1:.85}"/>`}).join('');
+  ksvg+=`<line x1="${pl}" x2="${W-pr}" y1="${yk(T)}" y2="${yk(T)}" stroke="var(--ink)" stroke-width="1.2" stroke-dasharray="4 3"/><text x="${W-pr}" y="${yk(T)-4}" text-anchor="end" font-size="10" fill="var(--muted)">目安 ${fmtK(T)}</text>`;
+  ksvg+=xLabels(days,xl,H);
+  ksvg+=days.map((k,i)=>`<rect x="${pl+bw*i}" y="0" width="${bw}" height="${H}" fill="transparent" data-k="${k}"/>`).join('');
+  $('kChart').innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="30日間の摂取カロリー">${ksvg}</svg>`;
+  readout(selDay||days[days.length-1]);
+}
+function xLabels(days,xl,H){return days.map((k,i)=>i%7===1||i===days.length-1?`<text x="${xl(i)}" y="${H-6}" text-anchor="middle" font-size="10" fill="var(--muted)">${+k.slice(5,7)}/${+k.slice(8)}</text>`:'').join('')}
+function readout(k){const w=st.weights[k],g=daySumG(k),kc=dayKcal(k);
+  $('readout').innerHTML=`<b>${+k.slice(5,7)}/${+k.slice(8)}</b>　体重 ${w!=null?w.toFixed(1)+'kg':'—'}　摂取 ${fmtK(kc)}kcal　お酒 ${fmtG(g)}g`}
+['wChart','kChart'].forEach(id=>{const el=$(id);const h=e=>{const r=e.target.closest('rect[data-k]');if(!r)return;selDay=r.dataset.k;readout(selDay)};el.addEventListener('click',h);el.addEventListener('mousemove',h)});
+$('wMinus').onclick=()=>{$('wIn').value=(+$('wIn').value-0.1).toFixed(1)};
+$('wPlus').onclick=()=>{$('wIn').value=(+$('wIn').value+0.1).toFixed(1)};
+$('wSave').onclick=()=>{const v=+$('wIn').value;if(!(v>20&&v<300)){toast('体重を確認してください');return}st.weights[todayK()]=Math.round(v*10)/10;save();renderTsumi();toast(`けさの体重 ${v.toFixed(1)}kg を記録`)};
+
+// ---------- 設定 ----------
+function renderSet(){
+  document.querySelectorAll('#levelSeg button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.l===st.level));
+  document.querySelectorAll('#limitSeg button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.l===st.limit));
+  document.querySelectorAll('#sexSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st.prof.sex));
+  document.querySelectorAll('#actSeg button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.v===st.prof.act));
+  $('pAge').value=st.prof.age;$('pH').value=st.prof.h;$('pW').value=latestWeight().toFixed(1);
+  document.querySelectorAll('#sbSeg button').forEach(b=>b.setAttribute('aria-pressed',(b.dataset.v==='on')===!!st.floatOn));
+  $('kcalTarget').textContent=`1日のカロリーの目安：約${fmtK(targetKcal())}kcal（体重${latestWeight().toFixed(1)}kgで計算）`;
+}
+$('levelSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;st.level=+b.dataset.l;save();renderSet();toast(`お酒レベル：${b.textContent}`)};
+$('limitSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;st.limit=+b.dataset.l;save();renderAll();toast(`1日の目安を ${st.limit}g にしました`)};
+$('sexSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;st.prof.sex=b.dataset.v;save();renderAll()};
+$('actSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;st.prof.act=+b.dataset.v;save();renderAll()};
+$('pAge').onchange=()=>{const v=+$('pAge').value;if(v>=20&&v<=110){st.prof.age=v;save();renderAll()}};
+const setW=v=>{v=+v;if(!(v>20&&v<300)){toast('体重を確認してください');return}st.weights[todayK()]=Math.round(v*10)/10;save();renderAll();toast(`体重 ${v.toFixed(1)}kg で計算します`)};
+$('pW').onchange=()=>setW($('pW').value);
+$('cW').onchange=()=>setW($('cW').value);
+$('sbSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;st.floatOn=b.dataset.v==='on';save();renderStatus();renderSet()};
+$('pH').onchange=()=>{const v=+$('pH').value;if(v>=100&&v<=230){st.prof.h=v;save();renderAll()}};
+let resetArm=false;
+$('resetAll').onclick=()=>{if(!resetArm){resetArm=true;$('resetAll').textContent='本当に消す';$('resetMsg').textContent='もう一度押すと消えます';setTimeout(()=>{resetArm=false;$('resetAll').textContent='すべての記録を消す';$('resetMsg').textContent=''},4000);return}
+  st.entries=[];st.daily={};st.weights={};st.shops=[];st.cur={};st.review={};st.sample=false;save();resetArm=false;$('resetAll').textContent='すべての記録を消す';$('resetMsg').textContent='';renderAll();toast('記録を消しました')};
+
+// ---------- タブ ----------
+document.querySelector('nav.tabs').onclick=e=>{const b=e.target.closest('[data-tab]');if(!b)return;
+  document.querySelectorAll('nav.tabs [data-tab]').forEach(x=>x.setAttribute('aria-selected',x===b));
+  document.querySelectorAll('section.tab').forEach(s=>s.hidden=s.id!=='tab-'+b.dataset.tab);
+  const t=b.dataset.tab;setTimeout(updateFloat,0);
+  if(t==='cal')renderCal();if(t==='pair'){genre=null;pairCat=null;renderPair()}if(t==='tsumi')renderTsumi();if(t==='set')renderSet();if(t==='today')renderToday();setupFolds();
+  window.scrollTo(0,0)};
+
+
+// ---------- 折りたたみ ----------
+st.folds=st.folds||{};
+function setupFolds(){
+  document.querySelectorAll('main .card').forEach((card,i)=>{
+    if(card.id==='hero'||card.tagName==='DETAILS')return;
+    const head=card.firstElementChild;if(!head)return;
+    if(!(head.tagName==='H2'||head.querySelector('h2')))return;
+    if(!card.dataset.fold)card.dataset.fold=card.id||((card.closest('section')||{}).id+'-'+(head.textContent||'').trim().slice(0,12));
+    card.classList.add('foldable');card.classList.toggle('collapsed',!!st.folds[card.dataset.fold]);
+  });
+}
+document.querySelector('main').addEventListener('click',e=>{
+  const card=e.target.closest('.card.foldable');if(!card)return;
+  const head=card.firstElementChild;if(!head||!head.contains(e.target))return;
+  if(e.target.closest('button,input,a,label,select'))return;
+  const c=!card.classList.contains('collapsed');card.classList.toggle('collapsed',c);st.folds[card.dataset.fold]=c;save();
+});
+function renderAll(){renderToday();renderCal();renderPair();renderTsumi();renderSet();setupFolds()}
+const n=new Date();$('hdrDate').textContent=`${n.getFullYear()}-${pad(n.getMonth()+1)}-${pad(n.getDate())}（${'日月火水木金土'[n.getDay()]}）`;
+new IntersectionObserver(es=>{es.forEach(en=>{heroVisible=en.isIntersecting;updateFloat()})},{threshold:0}).observe($('hero'));
+
+// ---------- はじめての起動 ----------
+function openGate(){$('gate').hidden=false;document.body.style.overflow='hidden'}
+function closeGate(){$('gate').hidden=true;document.body.style.overflow=''}
+if(FIRST||!st.agreed)openGate();
+$('gateYes').onclick=()=>{st.agreed=true;save();if(FIRST&&!st.entries.length){$('gateBtns').hidden=true;$('gateStart').hidden=false}else closeGate()};
+$('gateNo').onclick=()=>{$('gateMsg').textContent='ごめんなさい、このアプリは20歳以上の方向けです。'};
+$('startEmpty').onclick=()=>{closeGate();toast('ようこそ！頼んだら「頼んだ！」をタップ')};
+$('startSample').onclick=()=>{seed();registerCustom();save();renderAll();closeGate();toast('サンプルを入れました。設定から消せます')};
+$('loadSample').onclick=()=>{if(st.entries.some(e=>e.sample)){toast('サンプルはもう入っています');return}const keep={...st};seed();st.agreed=keep.agreed;save();renderAll();toast('サンプルを入れました')};
+
+// ---------- 書き出し・バックアップ ----------
+function download(name,blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
+const stamp=()=>todayK().replace(/-/g,'');
+function rowsEntries(){return [['日付','時刻','種類','品名','純アルコール(g)','カロリー(kcal)','お店','概算']].concat(st.entries.slice().sort((a,b)=>a.ts-b.ts).map(e=>{const sh=st.shops.find(s=>s.id===e.shop);const dr=e.kind==='drink';return [dayOf(e.ts),hm(e.ts),dr?'お酒':'食べ物',e.name,dr?Math.round(e.g*10)/10:'',dr?Math.round(e.g*7):e.kcal,sh?sh.name:'',e.approx?'はい':'']}))}
+function rowsDays(){const ks=new Set(st.entries.map(e=>dayOf(e.ts)));Object.keys(st.daily||{}).forEach(k=>ks.add(k));Object.keys(st.weights||{}).forEach(k=>ks.add(k));
+  return [['日付','純アルコール(g)','摂取カロリー(kcal)','水(杯)','小','大','戻','体重(kg)','振り返り']].concat([...ks].sort().map(k=>{const d=st.daily[k]||{};return [k,Math.round(daySumG(k)*10)/10,Math.round(dayKcal(k)),d.water||0,d.pee||0,d.poo||0,d.vomit||0,st.weights[k]??'',st.review[k]||'']}))}
+function toCsv(rows){return '﻿'+rows.map(r=>r.map(v=>{v=String(v??'');return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(',')).join('\r\n')}
+function loadXlsx(){return new Promise((ok,ng)=>{if(window.XLSX)return ok(window.XLSX);const sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';sc.onload=()=>ok(window.XLSX);sc.onerror=ng;document.head.appendChild(sc)})}
+$('expXlsx').onclick=async()=>{if(!st.entries.length){toast('まだ記録がありません');return}
+  try{const X=await loadXlsx();const wb=X.utils.book_new();X.utils.book_append_sheet(wb,X.utils.aoa_to_sheet(rowsEntries()),'記録');X.utils.book_append_sheet(wb,X.utils.aoa_to_sheet(rowsDays()),'日別');X.writeFile(wb,`スピ系チェッカー_${stamp()}.xlsx`);toast('Excelファイルを保存しました')}
+  catch(e){download(`スピ系チェッカー_記録_${stamp()}.csv`,new Blob([toCsv(rowsEntries())],{type:'text/csv'}));toast('通信できないのでCSVで保存しました')}};
+$('expCsv').onclick=()=>{if(!st.entries.length){toast('まだ記録がありません');return}download(`スピ系チェッカー_記録_${stamp()}.csv`,new Blob([toCsv(rowsEntries())],{type:'text/csv'}));setTimeout(()=>download(`スピ系チェッカー_日別_${stamp()}.csv`,new Blob([toCsv(rowsDays())],{type:'text/csv'})),400);toast('CSVを2つ保存しました')};
+$('expJson').onclick=()=>{download(`スピ系チェッカー_バックアップ_${stamp()}.json`,new Blob([JSON.stringify({app:'spikei-checker',v:1,savedAt:new Date().toISOString(),data:st})],{type:'application/json'}));toast('バックアップを保存しました')};
+let impPending=null;
+$('impJson').onchange=ev=>{const f=ev.target.files[0];ev.target.value='';if(!f)return;const r=new FileReader();r.onload=()=>{try{const j=JSON.parse(r.result);const d=j&&j.app==='spikei-checker'?j.data:null;if(!d||!Array.isArray(d.entries))throw 0;impPending=d;
+  $('impMsg').innerHTML=`${d.entries.length}件の記録が入ったバックアップです。いまの記録は置き換わります。<button class="btn" id="impOk" style="margin-left:6px;padding:4px 12px">戻す</button>`}catch(e){impPending=null;$('impMsg').textContent='このアプリのバックアップファイルではないようです。'}};r.readAsText(f)};
+$('impMsg').onclick=e=>{if(!e.target.closest('#impOk')||!impPending)return;st=Object.assign(st,impPending);st.agreed=true;impPending=null;registerCustom();save();renderAll();$('impMsg').textContent='';toast('バックアップから戻しました')};
+
+// ---------- オフライン対応 ----------
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+renderAll();
+})();
+</script>
+
+</body>
+</html>
