@@ -284,6 +284,44 @@ table.list td.r,table.list th.r{text-align:right;white-space:nowrap}
 .sh-close{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;border:none;border-radius:16px;padding:14px 16px;background:var(--amber);color:var(--amber-ink);font-family:var(--display);font-weight:900;font-size:19px;letter-spacing:.06em;box-shadow:0 6px 16px color-mix(in srgb,var(--amber) 40%,transparent);transition:transform .1s}
 .sh-close:active{transform:scale(.97)}
 .sh-close svg{width:34px;height:34px;flex:none}
+.sh-close .mL,.sh-close .mR,.sh-close .chp{transform-box:fill-box;transform-origin:50% 100%}
+.sh-close .spk{opacity:0;transform-box:fill-box;transform-origin:50% 100%}
+.sh-close.clink .mL{animation:cL .3s ease-in-out}
+.sh-close.clink .mR{animation:cR .3s ease-in-out}
+.sh-close.clink .spk{animation:spk .3s ease-out}
+.sh-close.clink .chp{animation:chp .3s ease-in-out}
+.sh-close.clink{transform:scale(.96)}
+@keyframes cL{50%{transform:translateX(2px) rotate(10deg)}}
+@keyframes cR{50%{transform:translateX(-2px) rotate(-10deg)}}
+@keyframes spk{40%{opacity:0}60%{opacity:1;transform:scale(1.3)}100%{opacity:0}}
+@keyframes chp{50%{transform:translate(-2px,3px) rotate(-8deg)}}
+.sheet.closing{animation:shFade .3s ease-in forwards}
+.sheet.closing .panel{animation:shDown .3s ease-in forwards}
+@keyframes shFade{to{background:transparent}}
+@keyframes shDown{to{transform:translateY(105%)}}
+.cheers{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.cheers[hidden]{display:none}
+.ch-card{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--surface);color:var(--ink);border-radius:28px;padding:14px 28px 16px;box-shadow:0 14px 40px rgba(0,0,0,.28);animation:chIn 1.35s ease forwards}
+.ch-card svg{width:150px;height:120px;overflow:visible}
+.ch-txt{font-family:var(--display);font-weight:900;font-size:30px;letter-spacing:.08em;line-height:1.1}
+.ch-sub{font-size:13px;color:var(--muted);font-weight:700}
+.ch-card .bL,.ch-card .bR,.ch-card .chp2{transform-box:fill-box;transform-origin:50% 100%}
+.ch-card .bL{animation:bL .7s cubic-bezier(.3,1.4,.5,1) both}
+.ch-card .bR{animation:bR .7s cubic-bezier(.3,1.4,.5,1) both}
+.ch-card .sp2{transform-box:fill-box;transform-origin:50% 100%;animation:sp2 .9s ease-out both}
+.ch-card .stm path{animation:stm 1.1s ease-out both}
+.ch-card .stm path:nth-child(2){animation-delay:.12s}.ch-card .stm path:nth-child(3){animation-delay:.24s}
+.ch-card .chp2{animation:chp2 .5s ease-in-out .15s both}
+.ch-txt{animation:chTx .5s cubic-bezier(.3,1.6,.5,1) .3s both}
+.ch-bub{position:absolute;width:9px;height:9px;border-radius:50%;border:2px solid var(--amber);left:50%;top:48px;opacity:0;animation:bub 1s ease-out both}
+@keyframes chIn{0%{opacity:0;transform:scale(.6)}14%{opacity:1;transform:scale(1.04)}22%{transform:scale(1)}78%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-28px) scale(.96)}}
+@keyframes bL{0%{transform:translateX(-34px) rotate(-14deg)}45%{transform:translateX(5px) rotate(9deg)}70%{transform:translateX(0) rotate(2deg)}100%{transform:none}}
+@keyframes bR{0%{transform:translateX(34px) rotate(14deg)}45%{transform:translateX(-5px) rotate(-9deg)}70%{transform:translateX(0) rotate(-2deg)}100%{transform:none}}
+@keyframes sp2{0%,35%{opacity:0;transform:scale(.4)}50%{opacity:1;transform:scale(1.25)}100%{opacity:0;transform:scale(1.4)}}
+@keyframes stm{0%{opacity:0;transform:translateY(10px)}40%{opacity:1}100%{opacity:0;transform:translateY(-14px)}}
+@keyframes chp2{50%{transform:translate(-6px,8px) rotate(-6deg)}}
+@keyframes chTx{0%{opacity:0;transform:scale(.4)}100%{opacity:1;transform:none}}
+@keyframes bub{0%{opacity:0;transform:translate(var(--x),0) scale(.5)}20%{opacity:1}100%{opacity:0;transform:translate(calc(var(--x) * 1.6),-90px) scale(1.1)}}
 /* 下タブ */
 nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));z-index:5}
 nav.tabs .in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:2px}
@@ -546,6 +584,7 @@ nav.tabs button[aria-selected="true"] svg{color:var(--amber)}
   <div class="sub" id="gateMsg"></div>
 </div></div>
 
+<div class="cheers" id="cheers" hidden aria-hidden="true"></div>
 <div class="sheet" id="sheet" hidden><div class="panel" role="dialog" aria-modal="true" aria-labelledby="shName">
   <div class="grab"></div>
   <div class="ordered" id="shOrdered"><span id="shOrderedTxt"></span><button id="shUndo">取り消す</button></div>
@@ -1195,8 +1234,8 @@ function renderSheet(){
   const B=dr?(BRANDS[brandKey(shId)]||[]):(FBRANDS[shId]||[]);
   $('shBrand').innerHTML=`<div class="sub">記録はせず、読んで楽しむずかんです。</div>`+B.map(b=>`<div class="brand"><b>${b[0]}</b><span>${b[1]}</span></div>`).join('');
   $('shClose').innerHTML=dr
-   ?'<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g transform="rotate(14 10 20)"><rect x="6" y="11" width="9" height="14" rx="1.6"/><path d="M6 14H4.5a1.8 1.8 0 0 0-1.8 1.8v3.4A1.8 1.8 0 0 0 4.5 21H6"/><path d="M6 11c0-1.6 1.4-2.4 2.6-1.8.8-1.3 3-1.3 3.8 0 1.2-.5 2.6.2 2.6 1.8"/></g><g transform="rotate(-14 22 20)"><rect x="17" y="11" width="9" height="14" rx="1.6"/><path d="M26 14h1.5a1.8 1.8 0 0 1 1.8 1.8v3.4a1.8 1.8 0 0 1-1.8 1.8H26"/><path d="M17 11c0-1.6 1.4-2.4 2.6-1.8.8-1.3 3-1.3 3.8 0 1.2-.5 2.6.2 2.6 1.8"/></g><path d="M16 2.5v2.5M12.6 3.6l1.2 2M19.4 3.6l-1.2 2"/></svg><span>閉じて飲む</span>'
-   :'<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 16h24a12 9 0 0 1-24 0z"/><path d="M11 25h10"/><path d="M19 3l-7 11M25 4l-9 10"/></svg><span>閉じて食べる</span>';
+   ?'<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g class="mL"><g transform="rotate(14 10 20)"><rect x="6" y="11" width="9" height="14" rx="1.6"/><path d="M6 14H4.5a1.8 1.8 0 0 0-1.8 1.8v3.4A1.8 1.8 0 0 0 4.5 21H6"/><path d="M6 11c0-1.6 1.4-2.4 2.6-1.8.8-1.3 3-1.3 3.8 0 1.2-.5 2.6.2 2.6 1.8"/></g></g><g class="mR"><g transform="rotate(-14 22 20)"><rect x="17" y="11" width="9" height="14" rx="1.6"/><path d="M26 14h1.5a1.8 1.8 0 0 1 1.8 1.8v3.4a1.8 1.8 0 0 1-1.8 1.8H26"/><path d="M17 11c0-1.6 1.4-2.4 2.6-1.8.8-1.3 3-1.3 3.8 0 1.2-.5 2.6.2 2.6 1.8"/></g></g><path class="spk" d="M16 2.5v2.5M12.6 3.6l1.2 2M19.4 3.6l-1.2 2"/></svg><span>閉じて飲む</span>'
+   :'<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 16h24a12 9 0 0 1-24 0z"/><path d="M11 25h10"/><path class="chp" d="M19 3l-7 11M25 4l-9 10"/></svg><span>閉じて食べる</span>';
 }
 $('shSize').onclick=e=>{const b=e.target.closest('[data-sz]');if(!b)return;const d=byId[shId],sz=b.dataset.sz;st.sizePref[shId]=sz;
   if(shEntry){const sp=spec(d,sz);shEntry.size=sz;shEntry.g=gOf(sp.ml,sp.abv);shEntry.name=`${d.name}（${sz}）`}
@@ -1204,7 +1243,28 @@ $('shSize').onclick=e=>{const b=e.target.closest('[data-sz]');if(!b)return;const
 $('shTabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;shTab=b.dataset.t;renderSheet()};
 $('shMore').onclick=()=>{const key=`${shId}:${shLv}`,n=factsFor(shKind,shId,shLv).length;if(!n)return;shStart[shLv]=(shStart[shLv]||0)+PER;st.tp[key]=shStart[shLv]+PER;st.tr[key]=Math.min(n,Math.max(st.tr[key]||0,shStart[shLv]+PER));save();renderSheet()};
 $('shLevel').onclick=e=>{const b=e.target.closest('button');if(!b)return;shLv=+b.dataset.l;st.level=shLv;save();renderSheet()};
-$('shClose').onclick=closeSheet;
+const MUG='<path d="M22 46h-6a6 6 0 0 0-6 6v12a6 6 0 0 0 6 6h6" fill="none" stroke="#7a4a00" stroke-width="5"/><rect x="22" y="36" width="34" height="48" rx="6" fill="#f2b631" stroke="#7a4a00" stroke-width="3"/><path d="M30 48v26M39 48v26M48 48v26" stroke="#ffe08a" stroke-width="3" stroke-linecap="round"/><path d="M19 39c-1-8 7-12 12-7 3-7 13-7 16 0 6-4 13 0 12 7z" fill="#fff" stroke="#7a4a00" stroke-width="3" stroke-linejoin="round"/>';
+const CHEERS_DR=`<svg viewBox="0 0 120 96" aria-hidden="true"><g class="bL"><g transform="rotate(6 40 84)">${MUG}</g></g><g class="bR"><g transform="translate(120 0) scale(-1 1)"><g transform="rotate(6 40 84)">${MUG}</g></g></g><g class="sp2" stroke="#f2b631" stroke-width="4" stroke-linecap="round"><path d="M60 4v12M45 9l6 9M75 9l-6 9"/></g></svg>`;
+const CHEERS_FD='<svg viewBox="0 0 120 96" aria-hidden="true"><g class="stm" stroke="#9aa3c4" stroke-width="4" fill="none" stroke-linecap="round"><path d="M44 34c-6-6 6-10 0-18"/><path d="M60 32c-6-6 6-10 0-18"/><path d="M76 34c-6-6 6-10 0-18"/></g><path d="M22 50c4-12 20-16 38-16s34 4 38 16z" fill="#fff" stroke="#7a4a00" stroke-width="3" stroke-linejoin="round"/><path d="M12 50h96a48 34 0 0 1-96 0z" fill="#e0a020" stroke="#7a4a00" stroke-width="3" stroke-linejoin="round"/><path d="M46 86h28" stroke="#7a4a00" stroke-width="5" stroke-linecap="round"/><g class="chp2" stroke="#7a4a00" stroke-width="4" stroke-linecap="round"><path d="M80 4l-20 36M94 8l-26 34"/></g></svg>';
+let closingNow=false;
+function cheersClose(){
+  if(closingNow)return;
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches){closeSheet();return}
+  closingNow=true;const b=$('shClose'),dr=shKind==='drink';
+  try{navigator.vibrate&&navigator.vibrate(dr?[18,40,18]:20)}catch(e){}
+  b.classList.add('clink');
+  setTimeout(()=>{
+    let sub='';
+    if(dr){const g=daySumG(todayK()),L=st.limit;sub=g>=L*2?'お水、頼んどこ':g>=L?'そろそろお水もね':'ほどほどに、楽しく'}
+    else sub='ゆっくり味わって';
+    const bubs=dr?[-30,-14,0,14,30].map((x,i)=>`<i class="ch-bub" style="--x:${x}px;animation-delay:${.35+i*.08}s"></i>`).join(''):'';
+    const c=$('cheers');c.innerHTML=`<div class="ch-card">${dr?CHEERS_DR:CHEERS_FD}${bubs}<div class="ch-txt">${dr?'カンパイ！':'いただきます！'}</div><div class="ch-sub">${sub}</div></div>`;c.hidden=false;
+    $('sheet').classList.add('closing');
+    setTimeout(()=>{$('sheet').classList.remove('closing');b.classList.remove('clink');closeSheet();closingNow=false},300);
+    setTimeout(()=>{c.hidden=true;c.innerHTML=''},1400);
+  },300);
+}
+$('shClose').onclick=cheersClose;
 $('sheet').onclick=e=>{if(e.target===$('sheet'))closeSheet()};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('sheet').hidden)closeSheet()});
 $('shUndo').onclick=()=>{if(shEntry){st.entries=st.entries.filter(x=>x.id!==shEntry.id);save();renderToday();toast('取り消しました')}closeSheet()};
