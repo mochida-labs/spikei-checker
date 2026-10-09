@@ -354,6 +354,7 @@ button.tc-h{width:100%;background:none;border:none;padding:0;text-align:left;cur
 .np-mini .np-title{font-size:14.5px}
 .np-mini .btn{padding:6px 10px}
 .np-ai{margin-top:10px;border:1.5px dashed var(--line);border-radius:12px;padding:10px}
+.np-pre{white-space:pre-wrap;font:inherit;font-size:12px;line-height:1.6;background:var(--surface2);border-radius:10px;padding:8px 10px;max-height:240px;overflow:auto;margin-top:6px}
 select{background:var(--surface2);border:1.5px solid var(--line);border-radius:10px;padding:6px 8px;font:inherit;font-size:13px;color:var(--ink)}
 details.card summary{cursor:pointer}
 .lv-st{display:flex;align-items:center;gap:8px;font-family:var(--display);font-weight:900;font-size:18px}
@@ -1880,16 +1881,34 @@ function autoSplit(utts,meSp){
     const reason=(r.mark>0?`その場で「ウケた！」${r.mark}回・`:r.mark<0?'その場で「スベった」・':'')+`反応：笑い・驚き ${Math.round(laugh)}回、あいづち ${Math.round(shortR/0.4)}回`;
     return {id:npId(),title:first.slice(0,24),body:r.x.slice(0,1200),sp:r.sp,at:fmtSec(r.t0),grade,reason,genre:npGenres(r.x),scene:[],len:npLen(r.x)}});
   return cands.sort((a,b)=>b.grade-a.grade).slice(0,60)}
-function aiPrompt(text,meta){return `次は飲み会（約${meta.hours||'数'}時間）の文字起こしです。会話を「ひとつの話（エピソード）」ごとに区切って、聞いていた人の反応（笑い声、（笑）、「マジで？」「やばい」などのあいづち、話が盛り上がったか）から、ウケたかどうかを評価してください。${meta.me?`\n話し手のうち「${meta.me}」が私です。私が話したものを中心に、ほかの人の面白い話も入れてください。`:''}
-残す価値がありそうな話を最大30個まで選び、次のJSONだけを返してください（説明文は不要）。
-{"neta":[{"title":"話のタイトル（20字以内）","summary":"話のあらすじとオチ（150字以内。あとで自分が思い出せるように）","speaker":"話し手","start":"00:12:34","reaction":"爆笑|ウケた|まあまあ|スベった","reason":"そう判断した理由（反応の具体例）","scene":["序盤|中盤|深まり|締め のうち向いている場面"],"who":["仕事|友達|家族|初対面|お客さん のうち話して大丈夫な相手"],"genre":["失敗談|現場・仕事|木・植物|家族|酒|旅・遊び|健康|恋愛|昔話|人の話"],"length":"短|中|長"}]}
+// AI仕分け用の文章（上に一言 → 文字起こし → 下に詳しい指示 の「サンドイッチ」）
+const NP_PART=30000;
+function netaParts(text){const out=[];let cur='';text.split('\n').forEach(l=>{if(cur.length+l.length+1>NP_PART&&cur){out.push(cur);cur=''}cur+=(cur?'\n':'')+l});if(cur)out.push(cur);return out.length?out:['']}
+function netaInstr(meta){return `【お願い】
+上の「文字起こし」は、飲み会を録音して文字にしたものです。あなたは、この中から「また人前で話せる持ちネタ」を拾い出す編集者です。次の手順で仕分けてください。
 
---- 文字起こしここから ---
-${text}
---- 文字起こしここまで ---`}
+1. 区切る：会話を「ひとつの話（エピソード）」ごとに区切る。注文・あいさつ・相づちだけのやりとり、仕事の連絡などは除く。
+2. 受けを判定する：その話の直後の聞き手の反応で決める。
+　・爆笑＝複数の人の笑い（笑、ｗ、ははは など）や「腹痛い」「最高」が続く
+　・ウケた＝笑いや「マジで？」「やばい」などの反応がはっきりある
+　・まあまあ＝相づち程度
+　・スベった＝反応がない、すぐ別の話題に変わる
+　※文中の［ウケた］［スベった］は、本人がその場で押した印です。いちばん重く見てください。
+3. 書き直す：文字起こしの聞き間違いは文脈で直す。あとで本人がパッと思い出して、もう一度話せるように「つかみ」「あらすじ」「オチ」を短くまとめる。
+4. 気づかい：話し手本人以外の人名はイニシャルにする。人の秘密や悪口が中心の話は入れない。${meta.me?`\n5. 話し手のうち「${meta.me}」が本人です。本人が話したものを中心に選び、ほかの人の話は特に面白いものだけ入れて、ジャンルに「人の話」を付ける。`:''}
+
+【出力】残す価値がある話を最大30個、受けが大きい順に。次の形のJSONだけを出力してください（前後の説明は不要）。
+{"neta":[{"title":"話のタイトル（20字以内）","hook":"つかみの一言","summary":"あらすじ（120字以内）","punch":"オチ（40字以内）","speaker":"話し手","start":"話し始めの時刻（わかれば）","reaction":"爆笑|ウケた|まあまあ|スベった","reason":"判定の根拠になった反応","scene":["序盤|中盤|深まり|締め のうち、出すと効く場面"],"who":["仕事|友達|家族|初対面|お客さん のうち、話して大丈夫な相手"],"genre":["失敗談|現場・仕事|木・植物|家族|酒|旅・遊び|健康|恋愛|昔話|人の話"],"length":"短|中|長"}]}`}
+function netaPrompt(part,i,n,meta){return `次の文字起こしを、いちばん下に書いた【お願い】のとおりに仕分けてください。${n>1?`（長いので${n}つに分けています。これは${i+1}つ目です。この部分だけで仕分けてください）`:''}
+
+━━━━ 文字起こし ここから ━━━━
+${part}
+━━━━ 文字起こし ここまで ━━━━
+
+${netaInstr(meta)}`}
 function importAI(txt){const a=txt.indexOf('{'),b=txt.lastIndexOf('}');if(a<0||b<a)throw new Error('JSONが見つかりません');
   const J=JSON.parse(txt.slice(a,b+1)),L=Array.isArray(J)?J:(J.neta||[]);const sc={'序盤':'start','中盤':'mid','深まり':'deep','締め':'end'},wh={'仕事':'work','友達':'friend','家族':'family','初対面':'first','お客さん':'client'};
-  return L.filter(x=>x&&(x.title||x.summary)).map(x=>({id:npId(),title:String(x.title||'').slice(0,40)||String(x.summary).slice(0,20),body:String(x.summary||''),sp:x.speaker||'',at:x.start||'',grade:Math.max(0,['スベった','まあまあ','ウケた','爆笑'].indexOf(x.reaction)),reason:x.reason||'',
+  return L.filter(x=>x&&(x.title||x.summary)).map(x=>({id:npId(),title:String(x.title||'').slice(0,40)||String(x.summary).slice(0,20),body:[x.hook?'つかみ：'+x.hook:'',x.summary||'',x.punch?'オチ：'+x.punch:''].filter(Boolean).join('\n'),sp:x.speaker||'',at:x.start||'',grade:Math.max(0,['スベった','まあまあ','ウケた','爆笑'].indexOf(x.reaction)),reason:x.reason||'',
     scene:(x.scene||[]).map(s=>sc[s]).filter(Boolean),who:(x.who||[]).map(s=>wh[s]).filter(Boolean),genre:(x.genre||[]).filter(g=>NP_GENRE.includes(g)),len:['短','中','長'].includes(x.length)?x.length:npLen(x.summary)}))}
 // いまの飲み会の段階
 function netaPhase(){const k=todayK(),ds=dayDrinks(k),g=daySumG(k),L=st.limit,h=new Date().getHours();const first=ds.length?ds[0].ts:null,el=first?(Date.now()-first)/60000:0;
@@ -1935,15 +1954,7 @@ function renderLiveBox(){const el=$('liveBox');if(!el)return;const n=live.lines.
    ${live.on||live.lines.length?`<div class="lv-btns"><button class="btn lv-hit" id="lvHit">ウケた！</button><button class="btn ghost" id="lvMiss">スベった…</button></div>`:''}
    <div class="row" style="gap:8px;margin-top:8px">${live.on?'<button class="btn ghost" id="lvPause" style="flex:1">一時停止</button>':`<button class="btn" id="lvStart" style="flex:1">${live.lines.length?'再開':'聞き取りをはじめる'}</button>`}${live.lines.length?'<button class="btn ghost" id="lvDone" style="flex:1">終わって仕分けへ</button>':''}</div>
    ${!live.on&&live.lines.length?'<button class="btn ghost" id="lvClear" style="margin-top:8px;width:100%">聞き取った内容を消す</button>':''}`}
-// ---- Geminiで仕分け（自分の無料キー） ----
-const GKEY='spikei-gkey';const gGet=()=>{try{return localStorage.getItem(GKEY)||''}catch(e){return ''}};
-async function geminiModel(key){try{const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=${encodeURIComponent(key)}`);const j=await r.json();
-  const L=(j.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes('generateContent')&&/flash/.test(m.name)&&!/lite|image|tts|live|audio|embed|thinking|exp|preview|learnlm/.test(m.name)).map(m=>m.name.replace('models/',''));
-  const v=n=>{const m=n.match(/(\d+(?:\.\d+)?)/);return m?parseFloat(m[1]):0};L.sort((a,b)=>v(b)-v(a));return L[0]||'gemini-flash-latest'}catch(e){return 'gemini-flash-latest'}}
-async function geminiSplit(text,meta){const key=gGet();if(!key)throw new Error('nokey');const model=await geminiModel(key);
-  const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:aiPrompt(text,meta)}]}],generationConfig:{responseMimeType:'application/json',temperature:0.3}})});
-  const j=await r.json();if(!r.ok)throw new Error((j.error&&j.error.message)||('HTTP '+r.status));
-  const t=(((j.candidates||[])[0]||{}).content||{}).parts;if(!t)throw new Error('空の返事でした');return {cands:importAI(t.map(p=>p.text||'').join('')),model}}
+try{localStorage.removeItem('spikei-gkey')}catch(e){}
 // --- 画面 ---
 let npTab='rec',npQ='',npF={scene:null,who:null,genre:null,star:0},npSort='rec',npOpen=null,npEditId=null,npImp={text:'',name:'',me:'',mode:null};
 function openNeta(tab){npTab=tab||npTab;$('netaPanel').hidden=false;document.body.style.overflow='hidden';renderNeta()}
@@ -2005,7 +2016,7 @@ function renderNeta(){const N=npState(),B=$('npBody');
       <div class="meta">${(c.genre||[]).map(g=>`<span class="pill">${g}</span>`).join('')}</div>
       <div class="np-acts"><button class="btn" data-keep="${c.id}">残す</button><button class="btn ghost" data-drop="${c.id}">いらない</button></div></div>`).join('')}</div>`
      :`<div class="card"><div class="sub">仕分けを待っている話はありません。「読み込み」から録音の文字起こしを入れてください。</div></div>`;return}
-  if(npTab==='imp'){const hasKey=!!gGet();
+  if(npTab==='imp'){
     B.innerHTML=`<div class="card"><h2>① iPhoneでその場で聞き取る</h2>
       <div class="sub" style="margin-top:4px">画面をつけたままテーブルに置いておくだけ。iPhoneの音声認識で文字にします（追加料金なし）。ウケた瞬間に「ウケた！」を押すと、判定がぐっと正確になります。長時間なら充電しながら。</div>
       <div id="liveBox" style="margin-top:10px"></div></div>
@@ -2018,16 +2029,18 @@ function renderNeta(){const N=npState(),B=$('npBody');
      <div class="card" id="npSplitCard"><h2>③ 仕分ける</h2>
       <div class="stack" style="margin-top:8px">
        <button class="btn" id="npAuto">iPhoneの中で自動仕分け（無料・すぐ）</button>
-       <button class="btn ghost" id="npGem">${hasKey?'Geminiで仕分け（無料枠）':'Geminiで仕分け（はじめに設定）'}</button>
-       <button class="btn ghost" id="npAI">AIアプリに貼って仕分け（Claude・ChatGPTなど）</button></div>
-      ${npImp.mode==='ai'?`<div class="np-ai"><ol class="np-flow"><li>指示文と文字起こしをコピーしました。</li><li>ClaudeやChatGPTのアプリに貼って送信。</li><li>返ってきた答え（{ "neta": … }）をまるごとコピーして、下に貼る。</li></ol>
-        <textarea id="npAIres" rows="6" placeholder="AIの返事を貼り付け"></textarea><button class="btn" id="npAIimp" style="margin-top:8px;width:100%">仕分けに入れる</button></div>`:''}
-      <details class="np-ai" id="gemSet" ${npImp.mode==='gem'?'open':''}><summary><b>Geminiとつなぐ（自分の無料キー）</b>${hasKey?' <span class="pill">設定済み</span>':''}</summary>
-       <ol class="np-flow"><li>Google AI Studio（aistudio.google.com）にGoogleアカウントで入る。</li><li>「Get API key」→「APIキーを作成」。</li><li>できたキーを下に貼って保存。</li></ol>
-       <div class="sub" style="margin-top:6px">お支払い情報を登録しなければ無料枠だけで動き、料金はかかりません。1回の飲み会は1回の送信で仕分けます。<b>ただし無料枠では、送った内容がGoogleのサービス改善に使われることがあります。</b>友達の会話が入るので、気になるときは「iPhoneの中で自動」を使ってください。キーはこの端末にだけ保存し、バックアップにも入れません。</div>
-       <input type="text" id="gemKey" placeholder="APIキーを貼り付け" value="" style="margin-top:8px" autocomplete="off">
-       <div class="row" style="margin-top:8px;gap:8px"><button class="btn" id="gemSave" style="flex:1">保存</button>${hasKey?'<button class="btn ghost" id="gemDel">キーを消す</button>':''}</div></details>
-      <div class="sub" style="margin-top:12px">録音は、いっしょにいる人に一言伝えてから。文字起こしもネタ帳も、この端末の中だけに保存されます（Geminiやほかのアプリで仕分けたときだけ、その文字起こしが外に出ます）。</div></div>`;
+       <button class="btn ghost" id="npAI">自分のAIアプリで仕分け（コピーして貼る）</button></div>
+      ${npImp.mode==='ai'?(()=>{const P=netaParts(npImp.text),me=(npImp.me||'').trim();return `<div class="np-ai">
+        <ol class="np-flow"><li>下のボタンでコピー（文字起こしと指示がセットになっています）。</li><li>いつも使っているAIアプリ（Claude、ChatGPTなど）に貼って送信。</li><li>返ってきた答え（{"neta": … }）をまるごとコピーして、いちばん下に貼る。</li></ol>
+        <div class="stack" style="margin-top:8px">${P.map((_,i)=>`<button class="btn" data-cpy="${i}">${P.length>1?`パート${i+1}/${P.length}をコピー`:'AI用にコピー'}</button>`).join('')}</div>
+        ${P.length>1?`<div class="sub" style="margin-top:6px">長いので${P.length}つに分けました。1つずつ送って、返事も1つずつ下に取り込んでください。</div>`:''}
+        <details style="margin-top:8px"><summary class="sub">文字起こしをファイルで渡すとき（指示文だけコピー）</summary>
+         <div class="sub" style="margin-top:6px">レコーダーのテキストファイルをAIアプリに添付する場合は、指示文だけをコピーして、添付といっしょに送ってください。</div>
+         <button class="btn ghost" id="npCpyInstr" style="margin-top:6px;width:100%">指示文だけコピー</button>
+         <pre class="np-pre">${npEsc(netaInstr({me}).replace('上の「文字起こし」','添付した「文字起こし」'))}</pre></details>
+        <textarea id="npAIres" rows="6" placeholder="AIの返事をここに貼り付け" style="margin-top:10px"></textarea><button class="btn" id="npAIimp" style="margin-top:8px;width:100%">仕分けに入れる</button></div>`})():''}
+      <div class="sub" style="margin-top:12px">録音は、いっしょにいる人に一言伝えてから。文字起こしもネタ帳も、この端末の中だけに保存されます。アプリからどこかへ送ることはありません。</div></div>`;
+
     renderLiveBox();
     const u=npImp.text?parseTranscript(npImp.text):[];$('npInfo').textContent=npImp.text?`${npImp.text.length.toLocaleString()}文字・発言${u.length}件`:'';return}
 }
@@ -2067,20 +2080,12 @@ $('npBody').addEventListener('click',async e=>{const N=npState(),t=e.target;let 
   if(t.closest('#lvMiss')){liveMark(false);return}
   if(t.closest('#lvDone')){liveStop(true);npImp.text=liveText();npImp.me='';renderNeta();setTimeout(()=>{const c=$('npSplitCard');c&&c.scrollIntoView({behavior:'smooth',block:'start'})},50);toast('聞き取った内容を②に入れました。③で仕分けてください');return}
   if(b=t.closest('#lvClear')){if(b.dataset.arm!=='1'){b.dataset.arm='1';b.textContent='本当に消す';return}live={on:false,lines:[],t0:0,acc:0};liveSave();renderLiveBox();return}
-  if(t.closest('#gemSave')){const k=($('gemKey').value||'').trim();if(!k){toast('キーを貼ってください');return}try{localStorage.setItem(GKEY,k)}catch(_){}npImp.mode=null;renderNeta();toast('Geminiのキーを保存しました');return}
-  if(t.closest('#gemDel')){try{localStorage.removeItem(GKEY)}catch(_){}renderNeta();toast('キーを消しました');return}
-  if(b=t.closest('#npGem')){if(!gGet()){npImp.mode='gem';renderNeta();return}if(!npImp.text.trim()){toast('文字起こしを入れてください');return}
-    const u=parseTranscript(npImp.text),ts=u.map(x=>x.t).filter(x=>x!=null),hrs=ts.length?Math.max(1,Math.round((ts[ts.length-1]-ts[0])/3600)):null;
-    b.disabled=true;b.textContent='Geminiが仕分け中…（数十秒）';
-    try{const {cands,model}=await geminiSplit(npImp.text,{me:(npImp.me||'').trim(),hours:hrs});cands.forEach(c=>{if(!c.who.length)c.who=[N.who];c.src=todayK()});N.inbox=cands.concat(N.inbox);npImp={text:'',name:'',me:npImp.me,mode:null};save();npTab='inbox';renderNeta();toast(`${cands.length}本を仕分けに入れました（${model}）`)}
-    catch(err){b.disabled=false;b.textContent='Geminiで仕分け（無料枠）';const m=String(err.message||err);toast(/quota|429|RESOURCE_EXHAUSTED/i.test(m)?'無料枠の上限です。時間をおくか「iPhoneの中で自動」で':/API key|401|403|PERMISSION/i.test(m)?'キーが正しくないようです':'うまくいきませんでした：'+m.slice(0,40))}return}
   if(t.closest('#npAuto')){const u=parseTranscript(npImp.text);if(u.length<5){toast('文字起こしを貼ってください');return}
     const C=autoSplit(u,(npImp.me||'').trim());C.forEach(c=>{if(!c.who)c.who=[N.who];c.src=todayK()});N.inbox=C.concat(N.inbox);npImp.text='';save();npTab='inbox';renderNeta();toast(C.length?`${C.length}本の話を見つけました`:'話のまとまりが見つかりませんでした');return}
-  if(t.closest('#npAI')){if(!npImp.text.trim()){toast('文字起こしを貼ってください');return}
-    const u=parseTranscript(npImp.text),ts=u.map(x=>x.t).filter(x=>x!=null),hrs=ts.length?Math.max(1,Math.round((ts[ts.length-1]-ts[0])/3600)):null;
-    const P=aiPrompt(npImp.text,{me:(npImp.me||'').trim(),hours:hrs});
-    try{await navigator.clipboard.writeText(P);npImp.mode='ai';renderNeta();toast('コピーしました。AIに貼ってください')}catch(_){npImp.mode='ai';renderNeta();toast('コピーできませんでした')}return}
-  if(t.closest('#npAIimp')){try{const C=importAI($('npAIres').value);C.forEach(c=>{if(!c.who.length)c.who=[N.who];c.src=todayK()});N.inbox=C.concat(N.inbox);npImp={text:'',name:'',me:npImp.me,mode:null};save();npTab='inbox';renderNeta();toast(`${C.length}本を仕分けに入れました`)}catch(err){toast('読み取れませんでした。AIの返事をまるごと貼ってください')}return}
+  if(t.closest('#npAI')){if(!npImp.text.trim()){toast('文字起こしを入れてください');return}npImp.mode='ai';renderNeta();setTimeout(()=>{const c=$('npSplitCard');c&&c.scrollIntoView({behavior:'smooth',block:'start'})},50);return}
+  if(b=t.closest('[data-cpy]')){const P=netaParts(npImp.text),i=+b.dataset.cpy,me=(npImp.me||'').trim();try{await navigator.clipboard.writeText(netaPrompt(P[i],i,P.length,{me}));b.textContent=(P.length>1?`パート${i+1}/${P.length}`:'AI用')+'　コピーしました ✓';toast('コピーしました。AIアプリに貼って送信してください')}catch(_){toast('コピーできませんでした')}return}
+  if(t.closest('#npCpyInstr')){try{await navigator.clipboard.writeText(netaInstr({me:(npImp.me||'').trim()}).replace('上の「文字起こし」','添付した「文字起こし」'));toast('指示文をコピーしました')}catch(_){toast('コピーできませんでした')}return}
+  if(t.closest('#npAIimp')){try{const C=importAI($('npAIres').value);C.forEach(c=>{if(!c.who.length)c.who=[N.who];c.src=todayK()});N.inbox=C.concat(N.inbox);save();$('npAIres').value='';toast(`${C.length}本を仕分けに入れました（「仕分け」タブで確認）`);renderNeta()}catch(err){toast('読み取れませんでした。AIの返事をまるごと貼ってください')}return}
 });
 function netaFromCand(c){return {id:npId(),title:c.title,body:c.body,grade:c.grade,scene:c.scene&&c.scene.length?c.scene:(c.len==='短'?['start','end']:c.len==='長'?['deep']:['mid']),who:c.who||[],genre:c.genre||[],len:c.len||npLen(c.body),told:[],created:Date.now(),src:c.src||null}}
 // きょう画面の小さなカードと、あそぶタブの入口
